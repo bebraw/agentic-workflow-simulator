@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-app-canvas: #f5efe6;
-  --color-app-surface: rgb(255 251 245 / 0.92);
-  --color-app-text: #1e1a16;
-  --color-app-text-soft: #5f554b;
-  --color-app-accent: #0b6e4f;
-  --color-app-accent-strong: #084c39;
-  --color-app-highlight: #f3c96b;
-  --color-app-sand: #ebddc8;
-  --color-app-rust: #8c4f2d;
-  --color-app-ink: #16342d;
-  --color-app-ink-soft: #bdd6c8;
-  --color-app-ink-contrast: #f7fbf6;
-  --color-app-line: rgb(30 26 22 / 0.12);
+  --color-app-canvas: #f3f6fb;
+  --color-app-surface: rgb(255 255 255 / 0.94);
+  --color-app-text: #162033;
+  --color-app-text-soft: #5b6475;
+  --color-app-accent: #2f6fed;
+  --color-app-accent-strong: #1f4db5;
+  --color-app-highlight: #7fb2ff;
+  --color-app-sand: #edf3ff;
+  --color-app-rust: #52607a;
+  --color-app-ink: #eef4ff;
+  --color-app-ink-soft: #5b6475;
+  --color-app-ink-contrast: #162033;
+  --color-app-line: rgb(22 32 51 / 0.1);
 
-  --shadow-panel: 0 24px 64px -42px rgb(30 26 22 / 0.34);
+  --shadow-panel: 0 18px 40px -28px rgb(22 32 51 / 0.12);
 }
 
 /*
@@ -29,16 +29,15 @@
   }
 
   body {
-    font-family: Georgia, "Times New Roman", serif;
+    font-family: "Avenir Next", "Helvetica Neue", "Segoe UI", sans-serif;
     text-rendering: optimizeLegibility;
     background:
-      radial-gradient(circle at top left, rgb(11 110 79 / 0.16), transparent 34%),
-      radial-gradient(circle at top right, rgb(243 201 107 / 0.18), transparent 28%),
-      linear-gradient(180deg, #f7f0e8 0%, var(--color-app-canvas) 100%);
+      radial-gradient(circle at top left, rgb(47 111 237 / 0.08), transparent 32%),
+      linear-gradient(180deg, #f8fbff 0%, var(--color-app-canvas) 100%);
   }
 
   ::selection {
-    background: rgb(11 110 79 / 0.18);
+    background: rgb(47 111 237 / 0.16);
   }
 
   *,

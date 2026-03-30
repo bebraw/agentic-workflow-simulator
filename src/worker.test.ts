@@ -14,6 +14,7 @@ describe("worker", () => {
     const body = await response.text();
     expect(body).toContain("Agent Workflow Studio");
     expect(body).toContain("localStorage");
+    expect(body).toContain("Watch the handoff");
     expect(body).toContain("/api/health");
   });
 
@@ -51,6 +52,6 @@ describe("worker", () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/css");
-    await expect(response.text()).resolves.toContain("--color-app-canvas:#f5efe6");
+    await expect(response.text()).resolves.toContain("--color-app-canvas:#f3f6fb");
   });
 });
