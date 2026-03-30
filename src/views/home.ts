@@ -15,6 +15,7 @@ type AgentRecord = {
 
 type TimeStepRecord = {
   id: string;
+  time: number;
   agentId: string;
   work: string;
   handoff: string;
@@ -31,6 +32,11 @@ type WorkflowRecord = {
 type WorkspaceState = {
   agents: AgentRecord[];
   workflows: WorkflowRecord[];
+};
+
+type TimeGroup = {
+  time: number;
+  steps: TimeStepRecord[];
 };
 
 const appTitle = "Agent Workflow Studio";
@@ -55,37 +61,154 @@ const starterState: WorkspaceState = {
       outputs: "Notes, sources, and open questions worth checking next.",
     },
     {
+      id: "agent-source-checker",
+      name: "Source Checker",
+      responsibility: "Verifies that evidence is trustworthy and properly cited.",
+      inputs: "Claims, links, and candidate references.",
+      outputs: "A checked set of sources with warnings about weak evidence.",
+    },
+    {
+      id: "agent-writer",
+      name: "Writer",
+      responsibility: "Turns plans and evidence into readable draft content.",
+      inputs: "A structure, notes, and supporting material.",
+      outputs: "A draft explanation, report, or script.",
+    },
+    {
       id: "agent-reviewer",
       name: "Reviewer",
       responsibility: "Checks the draft result and points out what should improve.",
       inputs: "A draft answer, outline, or artifact.",
       outputs: "A short critique with concrete fixes.",
     },
+    {
+      id: "agent-quiz-maker",
+      name: "Quiz Maker",
+      responsibility: "Creates practice questions that test the main concepts.",
+      inputs: "A topic list or study notes.",
+      outputs: "Questions, answer keys, and self-check prompts.",
+    },
+    {
+      id: "agent-slide-designer",
+      name: "Slide Designer",
+      responsibility: "Transforms the story into a presentation structure.",
+      inputs: "A message, draft script, and audience goal.",
+      outputs: "Slide titles, layout ideas, and visual cues.",
+    },
   ],
   workflows: [
     {
-      id: "workflow-study-guide",
-      name: "Build a study guide",
-      outcome: "Create a clear first draft for a course revision guide.",
-      agentIds: ["agent-planner", "agent-researcher", "agent-reviewer"],
+      id: "workflow-seminar-briefing",
+      name: "Prepare a seminar briefing",
+      outcome: "A short seminar briefing with verified sources and clear talking points.",
+      agentIds: ["agent-planner", "agent-researcher", "agent-source-checker", "agent-writer", "agent-reviewer"],
       timeSteps: [
         {
-          id: "time-step-plan",
+          id: "seminar-plan",
+          time: 1,
           agentId: "agent-planner",
-          work: "Break the assignment into 3-5 milestones and define what each milestone should produce.",
-          handoff: "Pass the milestone plan and open questions to Researcher.",
+          work: "Break the seminar topic into sections, decisions, and evidence needs.",
+          handoff: "Pass the structure to Researcher and Source Checker.",
         },
         {
-          id: "time-step-research",
+          id: "seminar-research",
+          time: 2,
           agentId: "agent-researcher",
-          work: "Gather course concepts, examples, and references that match each milestone.",
-          handoff: "Pass the evidence and notes to Reviewer.",
+          work: "Gather concepts, examples, and candidate references for each section.",
+          handoff: "Pass the collected notes to Writer.",
         },
         {
-          id: "time-step-review",
+          id: "seminar-source-check",
+          time: 2,
+          agentId: "agent-source-checker",
+          work: "Verify the strongest references and flag any weak or missing citations.",
+          handoff: "Pass the verified source list to Writer.",
+        },
+        {
+          id: "seminar-write",
+          time: 3,
+          agentId: "agent-writer",
+          work: "Assemble the final briefing draft using the research notes and checked sources.",
+          handoff: "Pass the briefing draft to Reviewer.",
+        },
+        {
+          id: "seminar-review",
+          time: 4,
           agentId: "agent-reviewer",
-          work: "Check whether the guide is clear enough for another student to use.",
-          handoff: "Deliver the revised draft as the workflow outcome.",
+          work: "Check the briefing for clarity, evidence quality, and missing transitions.",
+          handoff: "Deliver the revised seminar briefing as the workflow outcome.",
+        },
+      ],
+    },
+    {
+      id: "workflow-revision-pack",
+      name: "Build an exam revision pack",
+      outcome: "A compact revision pack with notes and practice questions.",
+      agentIds: ["agent-planner", "agent-researcher", "agent-quiz-maker", "agent-reviewer"],
+      timeSteps: [
+        {
+          id: "revision-plan",
+          time: 1,
+          agentId: "agent-planner",
+          work: "Turn the exam scope into a list of topics and learning goals.",
+          handoff: "Pass the topic list to Researcher and Quiz Maker.",
+        },
+        {
+          id: "revision-research",
+          time: 2,
+          agentId: "agent-researcher",
+          work: "Write short notes that explain the key ideas for each topic.",
+          handoff: "Pass the study notes to Reviewer.",
+        },
+        {
+          id: "revision-quiz",
+          time: 2,
+          agentId: "agent-quiz-maker",
+          work: "Create practice questions that match the same topic list.",
+          handoff: "Pass the question set to Reviewer.",
+        },
+        {
+          id: "revision-review",
+          time: 3,
+          agentId: "agent-reviewer",
+          work: "Check that the notes and quiz cover the same ideas and use clear wording.",
+          handoff: "Deliver the finished revision pack as the workflow outcome.",
+        },
+      ],
+    },
+    {
+      id: "workflow-project-presentation",
+      name: "Turn a project into a presentation",
+      outcome: "A presentation outline with a supporting narrative and slide structure.",
+      agentIds: ["agent-planner", "agent-writer", "agent-slide-designer", "agent-reviewer"],
+      timeSteps: [
+        {
+          id: "presentation-plan",
+          time: 1,
+          agentId: "agent-planner",
+          work: "Define the project story, audience goal, and the sections the presentation needs.",
+          handoff: "Pass the section plan to Writer and Slide Designer.",
+        },
+        {
+          id: "presentation-write",
+          time: 2,
+          agentId: "agent-writer",
+          work: "Draft the spoken explanation for each section of the presentation.",
+          handoff: "Pass the speaking notes to Reviewer.",
+        },
+        {
+          id: "presentation-design",
+          time: 2,
+          agentId: "agent-slide-designer",
+          work: "Sketch the slide sequence, titles, and the visual support each point needs.",
+          handoff: "Pass the slide structure to Reviewer.",
+        },
+        {
+          id: "presentation-review",
+          time: 3,
+          agentId: "agent-reviewer",
+          work: "Check that the spoken story and slide structure support each other.",
+          handoff: "Deliver the presentation outline as the workflow outcome.",
         },
       ],
     },
@@ -97,7 +220,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
     .map(
       (route) =>
         `<li class="flex items-start gap-3 rounded-2xl border border-app-line/70 bg-white px-4 py-3">
-          <a class="rounded-full bg-app-accent/12 px-3 py-1 text-xs font-semibold tracking-[0.12em] text-app-accent-strong uppercase underline decoration-app-accent/30 underline-offset-4" href="${escapeHtml(route.path)}">${escapeHtml(route.path)}</a>
+          <a class="rounded-full bg-app-accent/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-app-accent-strong underline decoration-app-accent/30 underline-offset-4" href="${escapeHtml(route.path)}">${escapeHtml(route.path)}</a>
           <span class="text-sm leading-6 text-app-text-soft">${escapeHtml(route.purpose)}</span>
         </li>`,
     )
@@ -129,12 +252,12 @@ export function renderHomePage(routes: RouteSummary[]): string {
                 <p class="mt-2">Give each agent one clear job, the input it needs, and the output it should produce.</p>
               </div>
               <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-4">
-                <p class="font-semibold text-app-text">2. Add time steps</p>
-                <p class="mt-2">State who acts at T1, T2, and beyond so the workflow becomes an ordered system.</p>
+                <p class="font-semibold text-app-text">2. Add time slots</p>
+                <p class="mt-2">Use the same time slot for agents that work in parallel and different slots for handoffs over time.</p>
               </div>
               <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-4">
-                <p class="font-semibold text-app-text">3. Watch the handoff</p>
-                <p class="mt-2">Inspect how work moves from one agent to the next. Everything saves to localStorage.</p>
+                <p class="font-semibold text-app-text">3. Compare examples</p>
+                <p class="mt-2">Study the bundled workflows to see the difference between sequential and parallel execution.</p>
               </div>
             </div>
           </div>
@@ -154,7 +277,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
                 <p class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="workflow-count">${starterState.workflows.length}</p>
               </div>
               <div class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Time steps</p>
+                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Agent actions</p>
                 <p class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="time-step-count">${countTimeSteps(starterState.workflows)}</p>
               </div>
             </section>
@@ -209,7 +332,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
             <div>
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow builder</p>
               <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Connect agents into a reusable sequence</h2>
-              <p class="mt-3 max-w-2xl text-sm leading-7 text-app-text-soft">Pick the agents involved, then define each time step so students can see who acts at that moment and what gets handed forward.</p>
+              <p class="mt-3 max-w-2xl text-sm leading-7 text-app-text-soft">Pick the agents involved, then define each action with a time slot. Agents that share the same time slot are shown as running in parallel.</p>
             </div>
 
             <form class="mt-6 grid gap-4" id="workflow-form">
@@ -233,15 +356,19 @@ export function renderHomePage(routes: RouteSummary[]): string {
               </fieldset>
 
               <fieldset class="rounded-[1rem] border border-app-line/80 bg-app-canvas/70 p-4">
-                <legend class="px-2 text-sm font-semibold text-app-text">Time steps</legend>
-                <p class="mb-4 text-sm leading-6 text-app-text-soft">Each time step says who is active now, what work they do at that moment, and what they pass to the next agent.</p>
-                <div class="grid gap-4 xl:grid-cols-[minmax(0,0.7fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                <legend class="px-2 text-sm font-semibold text-app-text">Agent actions</legend>
+                <p class="mb-4 text-sm leading-6 text-app-text-soft">Give each action a time slot, the acting agent, the work performed there, and the handoff that follows. Reusing a time slot shows parallel work.</p>
+                <div class="grid gap-4 xl:grid-cols-[minmax(0,0.45fr)_minmax(0,0.75fr)_minmax(0,1fr)_minmax(0,1fr)]">
+                  <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-time">
+                    Time slot
+                    <input class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-time" min="1" name="workflow-time-step-time" step="1" type="number" value="1">
+                  </label>
                   <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-agent">
                     Acting agent
                     <select class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-agent" name="workflow-time-step-agent"></select>
                   </label>
                   <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-work">
-                    Work at this time step
+                    Work at this time slot
                     <textarea class="min-h-24 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-work" maxlength="220" name="workflow-time-step-work" placeholder="Researcher gathers examples for the first section"></textarea>
                   </label>
                   <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-handoff">
@@ -250,12 +377,12 @@ export function renderHomePage(routes: RouteSummary[]): string {
                   </label>
                 </div>
                 <div class="mt-4 flex flex-wrap items-center gap-3">
-                  <button class="rounded-full bg-app-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-app-accent-strong" id="time-step-submit" type="button">Add time step</button>
-                  <button class="hidden rounded-full border border-app-line/70 bg-white px-5 py-3 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="time-step-cancel" type="button">Cancel time step edit</button>
+                  <button class="rounded-full bg-app-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-app-accent-strong" id="time-step-submit" type="button">Add agent action</button>
+                  <button class="hidden rounded-full border border-app-line/70 bg-white px-5 py-3 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="time-step-cancel" type="button">Cancel edit</button>
                   <p class="text-sm font-semibold text-app-rust" id="time-step-error" role="status"></p>
                 </div>
                 <div class="mt-4 grid gap-3" id="time-step-list">
-                  <div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">No time steps yet. Add T1 to show who starts the workflow.</div>
+                  <div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">No actions yet. Add T1 to show who starts the workflow.</div>
                 </div>
               </fieldset>
 
@@ -272,9 +399,9 @@ export function renderHomePage(routes: RouteSummary[]): string {
 
         <aside class="grid gap-6">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Time-step playback</p>
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Time-slot playback</p>
             <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Watch the handoff</h2>
-            <p class="mt-3 text-sm leading-7 text-app-text-soft">Move through a workflow step by step to see who is active now, what work packet they create, and where that packet goes next.</p>
+            <p class="mt-3 text-sm leading-7 text-app-text-soft">Move through a workflow time slot by time slot to see who is active now, which agents work in parallel, and where the handoff goes next.</p>
             <div class="mt-5 grid gap-4">
               <label class="grid gap-2 text-sm font-semibold text-app-text" for="playback-workflow">
                 Workflow to inspect
@@ -283,9 +410,9 @@ export function renderHomePage(routes: RouteSummary[]): string {
                 </select>
               </label>
               <div class="flex flex-wrap items-center gap-3">
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-prev" type="button">Previous step</button>
-                <p class="text-sm font-semibold uppercase tracking-[0.18em] text-app-rust" id="playback-step-counter">${starterWorkflow ? `T1 of ${starterWorkflow.timeSteps.length}` : "No time steps"}</p>
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next step</button>
+                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-prev" type="button">Previous slot</button>
+                <p class="text-sm font-semibold uppercase tracking-[0.18em] text-app-rust" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
+                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next slot</button>
               </div>
               <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
             </div>
@@ -296,16 +423,16 @@ export function renderHomePage(routes: RouteSummary[]): string {
             <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">What students should notice</h2>
             <div class="mt-5 grid gap-4">
               <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <h3 class="text-lg font-semibold tracking-[-0.03em]">Agents are roles, not magic</h3>
-                <p class="mt-2 text-sm leading-7 text-app-text-soft">An agent becomes easier to reason about when its job is small and its handoff is explicit.</p>
+                <h3 class="text-lg font-semibold tracking-[-0.03em]">Parallel work still needs coordination</h3>
+                <p class="mt-2 text-sm leading-7 text-app-text-soft">Two agents can work at the same time, but they still need a shared time slot and clear handoffs.</p>
               </article>
               <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <h3 class="text-lg font-semibold tracking-[-0.03em]">Time creates structure</h3>
-                <p class="mt-2 text-sm leading-7 text-app-text-soft">T1, T2, and later steps show that workflows are not just lists of agents. They are ordered moments with specific handoffs.</p>
+                <h3 class="text-lg font-semibold tracking-[-0.03em]">Time slots are not the same as agent count</h3>
+                <p class="mt-2 text-sm leading-7 text-app-text-soft">A workflow might have five agent actions but only three time slots if some of those actions run in parallel.</p>
               </article>
               <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <h3 class="text-lg font-semibold tracking-[-0.03em]">Handoffs reveal bottlenecks</h3>
-                <p class="mt-2 text-sm leading-7 text-app-text-soft">If a handoff is vague, the next agent will not know what to do. The visualization makes that weakness easy to spot.</p>
+                <h3 class="text-lg font-semibold tracking-[-0.03em]">Handoffs reveal dependencies</h3>
+                <p class="mt-2 text-sm leading-7 text-app-text-soft">If a handoff is vague, the next slot will stall even when agents work in parallel.</p>
               </article>
             </div>
           </section>
@@ -334,7 +461,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
 
       <noscript>
         <section class="rounded-[1rem] border border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft shadow-panel">
-          This interface needs JavaScript enabled to save agents, time steps, and workflows in localStorage.
+          This interface needs JavaScript enabled to save agents, time slots, and workflows in localStorage.
         </section>
       </noscript>
     </main>
@@ -368,11 +495,12 @@ function renderWorkflowPreview(workflow: WorkflowRecord, agents: AgentRecord[]):
     .map((agentId) => resolveAgentName(agents, agentId))
     .map(
       (name) =>
-        `<li class="rounded-full border border-app-line/70 bg-app-accent/10 px-3 py-1 text-xs font-semibold tracking-[0.12em] uppercase text-app-accent-strong">${escapeHtml(name)}</li>`,
+        `<li class="rounded-full border border-app-line/70 bg-app-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-app-accent-strong">${escapeHtml(name)}</li>`,
     )
     .join("");
 
-  const timeSteps = workflow.timeSteps.map((timeStep, index) => renderTimeStepPreview(timeStep, workflow, agents, index)).join("");
+  const groups = groupTimeSteps(workflow.timeSteps);
+  const timeGroups = groups.map((group, index) => renderTimeGroupPreview(group, groups[index + 1], workflow, agents)).join("");
 
   return `<article class="rounded-[1rem] border border-app-line/75 bg-white p-5">
     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -383,31 +511,48 @@ function renderWorkflowPreview(workflow: WorkflowRecord, agents: AgentRecord[]):
       </div>
       <ul class="flex flex-wrap gap-2">${relatedAgents}</ul>
     </div>
-    <ol class="mt-5 grid gap-3">${timeSteps}</ol>
+    <ol class="mt-5 grid gap-3">${timeGroups}</ol>
   </article>`;
 }
 
-function renderTimeStepPreview(timeStep: TimeStepRecord, workflow: WorkflowRecord, agents: AgentRecord[], index: number): string {
-  const currentAgent = resolveAgentName(agents, timeStep.agentId);
-  const nextStep = workflow.timeSteps[index + 1];
-  const nextAgent = nextStep ? resolveAgentName(agents, nextStep.agentId) : "Outcome";
-
+function renderTimeGroupPreview(
+  group: TimeGroup,
+  nextGroup: TimeGroup | undefined,
+  workflow: WorkflowRecord,
+  agents: AgentRecord[],
+): string {
+  const actionCards = group.steps.map((step) => renderParallelActionCard(step, nextGroup, workflow, agents)).join("");
   return `<li class="rounded-[1rem] border border-app-line/70 bg-white p-4">
     <div class="flex gap-4">
       <div class="flex min-w-12 flex-col items-center">
-        <span class="flex size-10 items-center justify-center rounded-full bg-app-rust text-sm font-semibold text-white">T${index + 1}</span>
-        ${index < workflow.timeSteps.length - 1 ? '<span class="mt-2 h-full min-h-8 w-px bg-app-accent/25"></span>' : ""}
+        <span class="flex size-10 items-center justify-center rounded-full bg-app-rust text-sm font-semibold text-white">T${group.time}</span>
+        ${nextGroup ? '<span class="mt-2 h-full min-h-8 w-px bg-app-accent/25"></span>' : ""}
       </div>
       <div class="flex-1">
-        <p class="text-xs font-semibold uppercase tracking-[0.2em] text-app-accent">${escapeHtml(currentAgent)}</p>
-        <p class="mt-2 text-sm leading-7 text-app-text">${escapeHtml(timeStep.work)}</p>
-        <div class="mt-3 rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 px-4 py-3 text-sm leading-6 text-app-text-soft">
-          <p><span class="font-semibold text-app-text">Handoff:</span> ${escapeHtml(timeStep.handoff)}</p>
-          <p class="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">${nextStep ? `Next agent: ${escapeHtml(nextAgent)}` : `Outcome: ${escapeHtml(workflow.outcome)}`}</p>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${group.steps.length > 1 ? `${group.steps.length} agents work in parallel` : "Single active agent"}</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">${nextGroup ? `Next slot: T${nextGroup.time}` : "Final slot"}</p>
         </div>
+        <div class="mt-3 grid gap-3 md:grid-cols-2">${actionCards}</div>
       </div>
     </div>
   </li>`;
+}
+
+function renderParallelActionCard(
+  step: TimeStepRecord,
+  nextGroup: TimeGroup | undefined,
+  workflow: WorkflowRecord,
+  agents: AgentRecord[],
+): string {
+  return `<article class="rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 p-4">
+    <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${escapeHtml(resolveAgentName(agents, step.agentId))}</p>
+    <p class="mt-2 text-sm leading-7 text-app-text">${escapeHtml(step.work)}</p>
+    <div class="mt-3 rounded-[0.9rem] border border-app-line/70 bg-white px-4 py-3 text-sm leading-6 text-app-text-soft">
+      <p><span class="font-semibold text-app-text">Handoff:</span> ${escapeHtml(step.handoff)}</p>
+      <p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">${nextGroup ? `Feeds into T${nextGroup.time}` : `Outcome: ${escapeHtml(workflow.outcome)}`}</p>
+    </div>
+  </article>`;
 }
 
 export function renderPlaybackWorkflowOptions(workflows: WorkflowRecord[]): string {
@@ -419,29 +564,50 @@ export function renderPlaybackWorkflowOptions(workflows: WorkflowRecord[]): stri
     .join("");
 }
 
-export function renderPlaybackStage(workflow: WorkflowRecord, agents: AgentRecord[], index: number): string {
-  const timeStep = workflow.timeSteps[index];
-  const nextStep = workflow.timeSteps[index + 1];
-  const currentAgent = resolveAgentName(agents, timeStep.agentId);
-  const nextLabel = nextStep ? resolveAgentName(agents, nextStep.agentId) : workflow.outcome;
+export function renderPlaybackStage(workflow: WorkflowRecord, agents: AgentRecord[], groupIndex: number): string {
+  const groups = groupTimeSteps(workflow.timeSteps);
+  const group = groups[groupIndex];
+  if (!group) {
+    return renderEmptyPlaybackStage();
+  }
+
+  const nextGroup = groups[groupIndex + 1];
+  const activeCards = group.steps
+    .map(
+      (step) => `<article class="rounded-[0.9rem] border border-app-line/70 bg-white p-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${escapeHtml(resolveAgentName(agents, step.agentId))}</p>
+        <p class="mt-2 text-sm leading-7 text-app-text-soft">${escapeHtml(step.work)}</p>
+      </article>`,
+    )
+    .join("");
+  const handoffCards = group.steps
+    .map(
+      (step) => `<article class="rounded-[0.9rem] border border-app-line/70 bg-white px-4 py-3 text-sm leading-6 text-app-text-soft">
+        <p class="font-semibold text-app-text">${escapeHtml(resolveAgentName(agents, step.agentId))}</p>
+        <p class="mt-2">${escapeHtml(step.handoff)}</p>
+      </article>`,
+    )
+    .join("");
 
   return `<div class="grid gap-4">
     <article class="rounded-[1rem] border border-app-line/75 bg-white p-5">
-      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-app-rust">Active at T${index + 1}</p>
-      <h3 class="mt-2 text-2xl font-semibold tracking-[-0.04em] text-app-text">${escapeHtml(currentAgent)}</h3>
-      <p class="mt-3 text-sm leading-7 text-app-text-soft">${escapeHtml(timeStep.work)}</p>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Active at T${group.time}</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${group.steps.length > 1 ? `${group.steps.length} agents are working in parallel at this time.` : "One agent is active in this slot."}</p>
+      </div>
+      <div class="mt-4 grid gap-3 md:grid-cols-2">${activeCards}</div>
     </article>
     <article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast">
-      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packet</p>
-      <p class="mt-3 text-base leading-7">${escapeHtml(timeStep.handoff)}</p>
-      <p class="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-app-highlight">${nextStep ? "Next agent" : "Workflow outcome"}</p>
-      <p class="mt-2 text-lg font-semibold tracking-[-0.02em]">${escapeHtml(nextLabel)}</p>
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p>
+      <div class="mt-4 grid gap-3">${handoffCards}</div>
+      <p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${nextGroup ? `Next slot: T${nextGroup.time}` : "Workflow outcome"}</p>
+      <p class="mt-2 text-lg font-semibold tracking-[-0.02em]">${nextGroup ? `${nextGroup.steps.length} agent${nextGroup.steps.length === 1 ? "" : "s"} continue at T${nextGroup.time}` : escapeHtml(workflow.outcome)}</p>
     </article>
   </div>`;
 }
 
 export function renderEmptyPlaybackStage(): string {
-  return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time step to see the handoff playback.</div>';
+  return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the handoff playback.</div>';
 }
 
 export function resolveAgentName(agents: AgentRecord[], agentId: string): string {
@@ -450,6 +616,34 @@ export function resolveAgentName(agents: AgentRecord[], agentId: string): string
 
 export function countTimeSteps(workflows: WorkflowRecord[]): number {
   return workflows.reduce((sum, workflow) => sum + workflow.timeSteps.length, 0);
+}
+
+export function countTimeSlots(workflow: WorkflowRecord): number {
+  return groupTimeSteps(workflow.timeSteps).length;
+}
+
+function formatTimeCounter(workflow: WorkflowRecord, groupIndex: number): string {
+  const groups = groupTimeSteps(workflow.timeSteps);
+  const group = groups[groupIndex];
+  return group ? `T${group.time} of ${groups.length}` : "No time slots";
+}
+
+function groupTimeSteps(timeSteps: TimeStepRecord[]): TimeGroup[] {
+  const groups = new Map<number, TimeStepRecord[]>();
+
+  for (const timeStep of sortTimeSteps(timeSteps)) {
+    const current = groups.get(timeStep.time) ?? [];
+    current.push(timeStep);
+    groups.set(timeStep.time, current);
+  }
+
+  return Array.from(groups.entries())
+    .sort(([left], [right]) => left - right)
+    .map(([time, steps]) => ({ time, steps }));
+}
+
+function sortTimeSteps(timeSteps: TimeStepRecord[]): TimeStepRecord[] {
+  return [...timeSteps].sort((left, right) => left.time - right.time);
 }
 
 function createClientScript(): string {
@@ -462,7 +656,7 @@ function createClientScript(): string {
   const state = loadState();
   let draftTimeSteps = [];
   let editingTimeStepId = "";
-  const playback = { workflowId: "", stepIndex: 0 };
+  const playback = { workflowId: "", groupIndex: 0 };
 
   const refs = {
     agentCount: document.getElementById("agent-count"),
@@ -487,6 +681,7 @@ function createClientScript(): string {
     agentOutputs: document.getElementById("agent-outputs"),
     workflowName: document.getElementById("workflow-name"),
     workflowOutcome: document.getElementById("workflow-outcome"),
+    workflowTimeStepTime: document.getElementById("workflow-time-step-time"),
     workflowTimeStepAgent: document.getElementById("workflow-time-step-agent"),
     workflowTimeStepWork: document.getElementById("workflow-time-step-work"),
     workflowTimeStepHandoff: document.getElementById("workflow-time-step-handoff"),
@@ -514,7 +709,7 @@ function createClientScript(): string {
   });
 
   refs.clearWorkspace?.addEventListener("click", () => {
-    const shouldClear = window.confirm("Clear all saved agents, time steps, and workflows from this browser?");
+    const shouldClear = window.confirm("Clear all saved agents, time slots, and workflows from this browser?");
     if (!shouldClear) {
       return;
     }
@@ -593,12 +788,12 @@ function createClientScript(): string {
 
     const hasInvalidTimeStep = draftTimeSteps.some((timeStep) => !agentIds.includes(timeStep.agentId));
     if (hasInvalidTimeStep) {
-      refs.timeStepError.textContent = "Each time step must use an agent selected for this workflow.";
+      refs.timeStepError.textContent = "Each action must use an agent selected for this workflow.";
       return;
     }
 
     if (draftTimeSteps.length === 0) {
-      refs.timeStepError.textContent = "Add at least one time step so the workflow has a visible sequence.";
+      refs.timeStepError.textContent = "Add at least one agent action so the workflow has a visible sequence.";
       return;
     }
 
@@ -607,7 +802,7 @@ function createClientScript(): string {
       name: refs.workflowName.value.trim(),
       outcome: refs.workflowOutcome.value.trim(),
       agentIds,
-      timeSteps: cloneTimeSteps(draftTimeSteps),
+      timeSteps: sortTimeSteps(cloneTimeSteps(draftTimeSteps)),
     };
 
     if (!record.name || !record.outcome) {
@@ -616,7 +811,7 @@ function createClientScript(): string {
 
     upsertRecord(state.workflows, record);
     playback.workflowId = record.id;
-    playback.stepIndex = 0;
+    playback.groupIndex = 0;
     resetWorkflowForm();
     persist();
     render();
@@ -627,13 +822,15 @@ function createClientScript(): string {
   });
 
   refs.timeStepSubmit?.addEventListener("click", () => {
-    if (!(refs.workflowTimeStepAgent instanceof HTMLSelectElement) || !(refs.workflowTimeStepWork instanceof HTMLTextAreaElement) || !(refs.workflowTimeStepHandoff instanceof HTMLTextAreaElement)) {
+    if (!(refs.workflowTimeStepTime instanceof HTMLInputElement) || !(refs.workflowTimeStepAgent instanceof HTMLSelectElement) || !(refs.workflowTimeStepWork instanceof HTMLTextAreaElement) || !(refs.workflowTimeStepHandoff instanceof HTMLTextAreaElement)) {
       return;
     }
 
     const selectedAgentIds = getSelectedAgentIds();
+    const time = Number.parseInt(refs.workflowTimeStepTime.value, 10);
     const record = {
       id: editingTimeStepId || createId("time-step"),
+      time,
       agentId: refs.workflowTimeStepAgent.value,
       work: refs.workflowTimeStepWork.value.trim(),
       handoff: refs.workflowTimeStepHandoff.value.trim(),
@@ -641,17 +838,23 @@ function createClientScript(): string {
 
     refs.timeStepError.textContent = "";
 
+    if (!Number.isInteger(record.time) || record.time < 1) {
+      refs.timeStepError.textContent = "Use a whole-number time slot such as 1, 2, or 3.";
+      return;
+    }
+
     if (!record.agentId || !selectedAgentIds.includes(record.agentId)) {
       refs.timeStepError.textContent = "Choose an agent that is already part of the workflow.";
       return;
     }
 
     if (!record.work || !record.handoff) {
-      refs.timeStepError.textContent = "Describe both the work for this time step and the handoff.";
+      refs.timeStepError.textContent = "Describe both the work for this action and the handoff.";
       return;
     }
 
     upsertRecord(draftTimeSteps, record);
+    draftTimeSteps = sortTimeSteps(draftTimeSteps);
     resetTimeStepForm();
     renderDraftTimeSteps(new Set(selectedAgentIds));
   });
@@ -764,19 +967,20 @@ function createClientScript(): string {
     }
 
     playback.workflowId = refs.playbackWorkflow.value;
-    playback.stepIndex = 0;
+    playback.groupIndex = 0;
     renderPlayback();
   });
 
   refs.playbackPrev?.addEventListener("click", () => {
-    playback.stepIndex = Math.max(playback.stepIndex - 1, 0);
+    playback.groupIndex = Math.max(playback.groupIndex - 1, 0);
     renderPlayback();
   });
 
   refs.playbackNext?.addEventListener("click", () => {
     const workflow = state.workflows.find((record) => record.id === playback.workflowId) || state.workflows[0];
-    const lastIndex = workflow ? workflow.timeSteps.length - 1 : 0;
-    playback.stepIndex = Math.min(playback.stepIndex + 1, lastIndex);
+    const groups = workflow ? groupTimeSteps(workflow.timeSteps) : [];
+    const lastIndex = Math.max(groups.length - 1, 0);
+    playback.groupIndex = Math.min(playback.groupIndex + 1, lastIndex);
     renderPlayback();
   });
 
@@ -806,7 +1010,7 @@ function createClientScript(): string {
     draftTimeSteps = [];
     editingTimeStepId = "";
     playback.workflowId = "";
-    playback.stepIndex = 0;
+    playback.groupIndex = 0;
   }
 
   function render() {
@@ -878,15 +1082,16 @@ function createClientScript(): string {
     }
 
     if (draftTimeSteps.length === 0) {
-      refs.timeStepList.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">No time steps yet. Add T1 to show who starts the workflow.</div>';
+      refs.timeStepList.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">No actions yet. Add T1 to show who starts the workflow.</div>';
       return;
     }
 
-    refs.timeStepList.innerHTML = draftTimeSteps
-      .map((timeStep, index) => {
+    refs.timeStepList.innerHTML = sortTimeSteps(draftTimeSteps)
+      .map((timeStep) => {
         const agentName = resolveAgentName(timeStep.agentId);
         const invalid = selectedAgentIds.size > 0 && !selectedAgentIds.has(timeStep.agentId);
-        return '<article class="rounded-[1rem] border border-app-line/70 bg-white p-4"><div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">T' + (index + 1) + '</p><h3 class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">' + escapeHtml(agentName) + '</h3></div><div class="flex flex-wrap gap-2"><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" data-action="edit" data-time-step-id="' + escapeHtml(timeStep.id) + '" type="button">Edit</button><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-rust/45 hover:text-app-rust" data-action="delete" data-time-step-id="' + escapeHtml(timeStep.id) + '" type="button">Delete</button></div></div><p class="mt-3 text-sm leading-7 text-app-text-soft">' + escapeHtml(timeStep.work) + '</p><div class="mt-3 rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 px-4 py-3 text-sm leading-6 text-app-text-soft"><p><span class="font-semibold text-app-text">Handoff:</span> ' + escapeHtml(timeStep.handoff) + '</p>' + (invalid ? '<p class="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">This agent is no longer selected for the workflow.</p>' : "") + '</div></article>';
+        const parallel = draftTimeSteps.some((candidate) => candidate.id !== timeStep.id && candidate.time === timeStep.time);
+        return '<article class="rounded-[1rem] border border-app-line/70 bg-white p-4"><div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">T' + timeStep.time + (parallel ? ' parallel' : "") + '</p><h3 class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">' + escapeHtml(agentName) + '</h3></div><div class="flex flex-wrap gap-2"><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" data-action="edit" data-time-step-id="' + escapeHtml(timeStep.id) + '" type="button">Edit</button><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-rust/45 hover:text-app-rust" data-action="delete" data-time-step-id="' + escapeHtml(timeStep.id) + '" type="button">Delete</button></div></div><p class="mt-3 text-sm leading-7 text-app-text-soft">' + escapeHtml(timeStep.work) + '</p><div class="mt-3 rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 px-4 py-3 text-sm leading-6 text-app-text-soft"><p><span class="font-semibold text-app-text">Handoff:</span> ' + escapeHtml(timeStep.handoff) + '</p>' + (parallel ? '<p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Shares this time slot with another agent.</p>' : "") + (invalid ? '<p class="mt-2 text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">This agent is no longer selected for the workflow.</p>' : "") + '</div></article>';
       })
       .join("");
   }
@@ -914,15 +1119,18 @@ function createClientScript(): string {
           .map((agentId) => resolveAgentName(agentId))
           .map((name) => '<li class="rounded-full border border-app-line/70 bg-app-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-app-accent-strong">' + escapeHtml(name) + '</li>')
           .join("");
-
-        const timeSteps = workflow.timeSteps
-          .map((timeStep, index) => {
-            const nextStep = workflow.timeSteps[index + 1];
-            return '<li class="rounded-[1rem] border border-app-line/70 bg-white p-4"><div class="flex gap-4"><div class="flex min-w-12 flex-col items-center"><span class="flex size-10 items-center justify-center rounded-full bg-app-rust text-sm font-semibold text-white">T' + (index + 1) + '</span>' + (index < workflow.timeSteps.length - 1 ? '<span class="mt-2 h-full min-h-8 w-px bg-app-accent/25"></span>' : "") + '</div><div class="flex-1"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + escapeHtml(resolveAgentName(timeStep.agentId)) + '</p><p class="mt-2 text-sm leading-7 text-app-text">' + escapeHtml(timeStep.work) + '</p><div class="mt-3 rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 px-4 py-3 text-sm leading-6 text-app-text-soft"><p><span class="font-semibold text-app-text">Handoff:</span> ' + escapeHtml(timeStep.handoff) + '</p><p class="mt-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">' + (nextStep ? 'Next agent: ' + escapeHtml(resolveAgentName(nextStep.agentId)) : 'Outcome: ' + escapeHtml(workflow.outcome)) + '</p></div></div></div></li>';
+        const groups = groupTimeSteps(workflow.timeSteps);
+        const timeGroups = groups
+          .map((group, index) => {
+            const nextGroup = groups[index + 1];
+            const cards = group.steps
+              .map((timeStep) => '<article class="rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 p-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + escapeHtml(resolveAgentName(timeStep.agentId)) + '</p><p class="mt-2 text-sm leading-7 text-app-text">' + escapeHtml(timeStep.work) + '</p><div class="mt-3 rounded-[0.9rem] border border-app-line/70 bg-white px-4 py-3 text-sm leading-6 text-app-text-soft"><p><span class="font-semibold text-app-text">Handoff:</span> ' + escapeHtml(timeStep.handoff) + '</p><p class="mt-1 text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">' + (nextGroup ? 'Feeds into T' + nextGroup.time : 'Outcome: ' + escapeHtml(workflow.outcome)) + '</p></div></article>')
+              .join("");
+            return '<li class="rounded-[1rem] border border-app-line/70 bg-white p-4"><div class="flex gap-4"><div class="flex min-w-12 flex-col items-center"><span class="flex size-10 items-center justify-center rounded-full bg-app-rust text-sm font-semibold text-white">T' + group.time + '</span>' + (nextGroup ? '<span class="mt-2 h-full min-h-8 w-px bg-app-accent/25"></span>' : '') + '</div><div class="flex-1"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (group.steps.length > 1 ? group.steps.length + ' agents work in parallel' : 'Single active agent') + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">' + (nextGroup ? 'Next slot: T' + nextGroup.time : 'Final slot') + '</p></div><div class="mt-3 grid gap-3 md:grid-cols-2">' + cards + '</div></div></div></li>';
           })
           .join("");
 
-        return '<article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Workflow</p><h3 class="mt-2 text-2xl font-semibold tracking-[-0.04em] text-app-text">' + escapeHtml(workflow.name) + '</h3><p class="mt-3 max-w-2xl text-sm leading-7 text-app-text-soft">' + escapeHtml(workflow.outcome) + '</p></div><div class="flex flex-wrap justify-end gap-2"><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" data-action="edit" data-workflow-id="' + escapeHtml(workflow.id) + '" type="button">Edit</button><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-rust/45 hover:text-app-rust" data-action="delete" data-workflow-id="' + escapeHtml(workflow.id) + '" type="button">Delete</button></div></div><ul class="mt-4 flex flex-wrap gap-2">' + agentPills + '</ul><ol class="mt-5 grid gap-3">' + timeSteps + '</ol></article>';
+        return '<article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Workflow</p><h3 class="mt-2 text-2xl font-semibold tracking-[-0.04em] text-app-text">' + escapeHtml(workflow.name) + '</h3><p class="mt-3 max-w-2xl text-sm leading-7 text-app-text-soft">' + escapeHtml(workflow.outcome) + '</p></div><div class="flex flex-wrap justify-end gap-2"><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" data-action="edit" data-workflow-id="' + escapeHtml(workflow.id) + '" type="button">Edit</button><button class="rounded-full border border-app-line/70 bg-white px-3 py-1.5 text-xs font-semibold text-app-text transition hover:border-app-rust/45 hover:text-app-rust" data-action="delete" data-workflow-id="' + escapeHtml(workflow.id) + '" type="button">Delete</button></div></div><ul class="mt-4 flex flex-wrap gap-2">' + agentPills + '</ul><ol class="mt-5 grid gap-3">' + timeGroups + '</ol></article>';
       })
       .join("");
   }
@@ -935,10 +1143,10 @@ function createClientScript(): string {
     if (state.workflows.length === 0) {
       refs.playbackWorkflow.disabled = true;
       refs.playbackWorkflow.innerHTML = '<option value="">No workflows yet</option>';
-      refs.playbackStepCounter.textContent = "No time steps";
+      refs.playbackStepCounter.textContent = "No time slots";
       refs.playbackPrev.disabled = true;
       refs.playbackNext.disabled = true;
-      refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time step to see the handoff playback.</div>';
+      refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the handoff playback.</div>';
       return;
     }
 
@@ -948,26 +1156,32 @@ function createClientScript(): string {
       .join("");
 
     const activeWorkflow = state.workflows.find((workflow) => workflow.id === playback.workflowId) || state.workflows[0];
+    const groups = groupTimeSteps(activeWorkflow.timeSteps);
     playback.workflowId = activeWorkflow.id;
     refs.playbackWorkflow.value = activeWorkflow.id;
+    playback.groupIndex = Math.min(playback.groupIndex, Math.max(groups.length - 1, 0));
 
-    const maxIndex = Math.max(activeWorkflow.timeSteps.length - 1, 0);
-    playback.stepIndex = Math.min(playback.stepIndex, maxIndex);
-
-    const timeStep = activeWorkflow.timeSteps[playback.stepIndex];
-    if (!timeStep) {
-      refs.playbackStepCounter.textContent = "No time steps";
+    const group = groups[playback.groupIndex];
+    if (!group) {
+      refs.playbackStepCounter.textContent = "No time slots";
       refs.playbackPrev.disabled = true;
       refs.playbackNext.disabled = true;
-      refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add a time step to the selected workflow to see its handoff.</div>';
+      refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add an action to the selected workflow to see its handoff.</div>';
       return;
     }
 
-    const nextStep = activeWorkflow.timeSteps[playback.stepIndex + 1];
-    refs.playbackStepCounter.textContent = "T" + (playback.stepIndex + 1) + " of " + activeWorkflow.timeSteps.length;
-    refs.playbackPrev.disabled = playback.stepIndex === 0;
-    refs.playbackNext.disabled = playback.stepIndex === maxIndex;
-    refs.playbackStage.innerHTML = '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Active at T' + (playback.stepIndex + 1) + '</p><h3 class="mt-2 text-2xl font-semibold tracking-[-0.04em] text-app-text">' + escapeHtml(resolveAgentName(timeStep.agentId)) + '</h3><p class="mt-3 text-sm leading-7 text-app-text-soft">' + escapeHtml(timeStep.work) + '</p></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packet</p><p class="mt-3 text-base leading-7">' + escapeHtml(timeStep.handoff) + '</p><p class="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">' + (nextStep ? 'Next agent' : 'Workflow outcome') + '</p><p class="mt-2 text-lg font-semibold tracking-[-0.02em]">' + escapeHtml(nextStep ? resolveAgentName(nextStep.agentId) : activeWorkflow.outcome) + '</p></article></div>';
+    const nextGroup = groups[playback.groupIndex + 1];
+    const activeCards = group.steps
+      .map((timeStep) => '<article class="rounded-[0.9rem] border border-app-line/70 bg-white p-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + escapeHtml(resolveAgentName(timeStep.agentId)) + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + escapeHtml(timeStep.work) + '</p></article>')
+      .join("");
+    const handoffCards = group.steps
+      .map((timeStep) => '<article class="rounded-[0.9rem] border border-app-line/70 bg-white px-4 py-3 text-sm leading-6 text-app-text-soft"><p class="font-semibold text-app-text">' + escapeHtml(resolveAgentName(timeStep.agentId)) + '</p><p class="mt-2">' + escapeHtml(timeStep.handoff) + '</p></article>')
+      .join("");
+
+    refs.playbackStepCounter.textContent = 'T' + group.time + ' of ' + groups.length;
+    refs.playbackPrev.disabled = playback.groupIndex === 0;
+    refs.playbackNext.disabled = playback.groupIndex === groups.length - 1;
+    refs.playbackStage.innerHTML = '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Active at T' + group.time + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (group.steps.length > 1 ? group.steps.length + ' agents are working in parallel at this time.' : 'One agent is active in this slot.') + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + activeCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p><div class="mt-4 grid gap-3">' + handoffCards + '</div><p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Next slot: T' + nextGroup.time : 'Workflow outcome') + '</p><p class="mt-2 text-lg font-semibold tracking-[-0.02em]">' + (nextGroup ? nextGroup.steps.length + ' agent' + (nextGroup.steps.length === 1 ? '' : 's') + ' continue at T' + nextGroup.time : escapeHtml(activeWorkflow.outcome)) + '</p></article></div>';
   }
 
   function populateAgentForm(agent) {
@@ -985,9 +1199,9 @@ function createClientScript(): string {
     refs.workflowEditingId.value = workflow.id;
     refs.workflowName.value = workflow.name;
     refs.workflowOutcome.value = workflow.outcome;
-    draftTimeSteps = cloneTimeSteps(workflow.timeSteps);
+    draftTimeSteps = sortTimeSteps(cloneTimeSteps(workflow.timeSteps));
     playback.workflowId = workflow.id;
-    playback.stepIndex = 0;
+    playback.groupIndex = 0;
     refs.workflowSubmit.textContent = "Update workflow";
     refs.workflowCancel.classList.remove("hidden");
     refs.workflowAgentError.textContent = "";
@@ -1000,11 +1214,12 @@ function createClientScript(): string {
 
   function populateTimeStepForm(timeStep) {
     editingTimeStepId = timeStep.id;
+    refs.workflowTimeStepTime.value = String(timeStep.time);
     refs.workflowTimeStepWork.value = timeStep.work;
     refs.workflowTimeStepHandoff.value = timeStep.handoff;
     renderTimeStepAgentOptions(new Set(getSelectedAgentIds()));
     refs.workflowTimeStepAgent.value = timeStep.agentId;
-    refs.timeStepSubmit.textContent = "Update time step";
+    refs.timeStepSubmit.textContent = "Update agent action";
     refs.timeStepCancel.classList.remove("hidden");
     refs.timeStepError.textContent = "";
     refs.workflowTimeStepWork.focus();
@@ -1037,7 +1252,10 @@ function createClientScript(): string {
     if (refs.workflowTimeStepHandoff instanceof HTMLTextAreaElement) {
       refs.workflowTimeStepHandoff.value = "";
     }
-    refs.timeStepSubmit.textContent = "Add time step";
+    if (refs.workflowTimeStepTime instanceof HTMLInputElement) {
+      refs.workflowTimeStepTime.value = String(nextTimeSlot(draftTimeSteps));
+    }
+    refs.timeStepSubmit.textContent = "Add agent action";
     refs.timeStepCancel.classList.add("hidden");
     refs.timeStepError.textContent = "";
     renderTimeStepAgentOptions(new Set(getSelectedAgentIds()));
@@ -1078,7 +1296,7 @@ function createClientScript(): string {
                 name: normalizeText(workflow.name),
                 outcome: normalizeText(workflow.outcome),
                 agentIds,
-                timeSteps,
+                timeSteps: sortTimeSteps(timeSteps),
               };
             })
             .filter((workflow) => workflow.name && workflow.outcome && workflow.agentIds.length > 0 && workflow.timeSteps.length > 0)
@@ -1089,8 +1307,9 @@ function createClientScript(): string {
   function normalizeTimeSteps(workflow) {
     if (Array.isArray(workflow?.timeSteps)) {
       return workflow.timeSteps
-        .map((timeStep) => ({
+        .map((timeStep, index) => ({
           id: normalizeText(timeStep.id) || createId("time-step"),
+          time: Number.isInteger(timeStep.time) && timeStep.time > 0 ? timeStep.time : index + 1,
           agentId: normalizeText(timeStep.agentId),
           work: normalizeText(timeStep.work),
           handoff: normalizeText(timeStep.handoff),
@@ -1105,9 +1324,10 @@ function createClientScript(): string {
           const agentId = legacyAgentIds[index] || legacyAgentIds[legacyAgentIds.length - 1] || "";
           return {
             id: createId("time-step"),
+            time: index + 1,
             agentId,
             work: normalizeText(step),
-            handoff: index < steps.length - 1 ? "Pass the work to the next agent." : "Deliver the completed workflow outcome.",
+            handoff: index < steps.length - 1 ? "Pass the work to the next time slot." : "Deliver the completed workflow outcome.",
           };
         })
         .filter((timeStep) => timeStep.agentId && timeStep.work && timeStep.handoff);
@@ -1129,6 +1349,31 @@ function createClientScript(): string {
 
   function cloneTimeSteps(source) {
     return source.map((timeStep) => ({ ...timeStep }));
+  }
+
+  function sortTimeSteps(timeSteps) {
+    return [...timeSteps].sort((left, right) => left.time - right.time);
+  }
+
+  function groupTimeSteps(timeSteps) {
+    const groups = new Map();
+    for (const timeStep of sortTimeSteps(timeSteps)) {
+      const current = groups.get(timeStep.time) || [];
+      current.push(timeStep);
+      groups.set(timeStep.time, current);
+    }
+
+    return Array.from(groups.entries())
+      .sort(([left], [right]) => left - right)
+      .map(([time, steps]) => ({ time, steps }));
+  }
+
+  function nextTimeSlot(timeSteps) {
+    if (timeSteps.length === 0) {
+      return 1;
+    }
+
+    return Math.max(...timeSteps.map((timeStep) => timeStep.time)) + 1;
   }
 
   function normalizeText(value) {

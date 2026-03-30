@@ -5,8 +5,22 @@ test("renders the agent workflow studio", async ({ page }) => {
 
   await expect(page.getByRole("heading", { level: 1, name: "Agent Workflow Studio" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Watch the handoff" })).toBeVisible();
-  await expect(page.getByText("Everything saves to localStorage.")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 3, name: "Prepare a seminar briefing" })).toBeVisible();
+  await expect(page.getByText(/The app keeps the entire studio in/i)).toBeVisible();
   await expect(page.getByRole("link", { name: "/api/health" })).toBeVisible();
+});
+
+test("shows bundled workflow examples with parallel time slots", async ({ page }) => {
+  await page.goto("/");
+  const playbackStage = page.locator("#playback-stage");
+
+  await page.getByLabel("Workflow to inspect").selectOption({ label: "Prepare a seminar briefing" });
+  await expect(page.getByText("T1 of 4")).toBeVisible();
+  await page.getByRole("button", { name: "Next slot" }).click();
+  await expect(page.getByText("T2 of 4")).toBeVisible();
+  await expect(playbackStage.getByText("2 agents are working in parallel at this time.")).toBeVisible();
+  await expect(playbackStage.getByText("Gather concepts, examples, and candidate references for each section.")).toBeVisible();
+  await expect(playbackStage.getByText("Verify the strongest references and flag any weak or missing citations.")).toBeVisible();
 });
 
 test("creates time-stepped workflows that survive reloads", async ({ page }) => {
@@ -26,21 +40,23 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await page.getByLabel("Desired outcome").fill("A compact revision pack for the final week.");
   await page.getByRole("checkbox", { name: /Summarizer/ }).check();
   await page.getByRole("checkbox", { name: /Reviewer/ }).check();
+  await page.getByRole("spinbutton", { name: "Time slot" }).fill("1");
   await page.getByLabel("Acting agent").selectOption({ label: "Summarizer" });
-  await page.getByLabel("Work at this time step").fill("Turn lecture slides into a short set of study notes.");
+  await page.getByRole("textbox", { name: "Work at this time slot" }).fill("Turn lecture slides into a short set of study notes.");
   await page.getByLabel("What gets handed forward").fill("Pass the notes draft to Reviewer.");
-  await page.getByRole("button", { name: "Add time step" }).click();
+  await page.getByRole("button", { name: "Add agent action" }).click();
+  await page.getByRole("spinbutton", { name: "Time slot" }).fill("2");
   await page.getByLabel("Acting agent").selectOption({ label: "Reviewer" });
-  await page.getByLabel("Work at this time step").fill("Check whether the notes are complete and easy to scan.");
+  await page.getByRole("textbox", { name: "Work at this time slot" }).fill("Check whether the notes are complete and easy to scan.");
   await page.getByLabel("What gets handed forward").fill("Return the corrected study guide as the final outcome.");
-  await page.getByRole("button", { name: "Add time step" }).click();
+  await page.getByRole("button", { name: "Add agent action" }).click();
   await page.getByRole("button", { name: "Save workflow" }).click();
 
   await expect(page.getByRole("heading", { level: 3, name: "Revise for an exam" })).toBeVisible();
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Revise for an exam" });
   await expect(page.getByText("T1 of 2")).toBeVisible();
   await expect(page.getByText("Pass the notes draft to Reviewer.", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Next step" }).click();
+  await page.getByRole("button", { name: "Next slot" }).click();
   await expect(page.getByText("T2 of 2")).toBeVisible();
   await expect(page.getByText("Return the corrected study guide as the final outcome.", { exact: true })).toBeVisible();
   await page.reload();

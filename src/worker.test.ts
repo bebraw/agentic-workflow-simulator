@@ -15,6 +15,8 @@ describe("worker", () => {
     expect(body).toContain("Agent Workflow Studio");
     expect(body).toContain("localStorage");
     expect(body).toContain("Watch the handoff");
+    expect(body).toContain("Prepare a seminar briefing");
+    expect(body).toContain("Source Checker");
     expect(body).toContain("/api/health");
   });
 
