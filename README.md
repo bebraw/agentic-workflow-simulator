@@ -1,6 +1,6 @@
-# vibe-template
+# agentic-workflow-simulator
 
-This is a template for my vibecoding projects and it captures what I consider my best practices so I don't have to repeat them for each experiment.
+The app is designed for university students with little or no programming experience, so the interface focuses on plain-language agent definitions, explicit workflow steps, and visible saved state.
 
 Local development in this repo targets macOS. Other platforms may need script and tooling adjustments before the baseline workflow works as documented.
 
@@ -34,7 +34,8 @@ Local development in this repo targets macOS. Other platforms may need script an
 
 ## Starter App
 
-- `GET /` serves a minimal HTML Worker stub.
+- `GET /` serves the Agent Workflow Studio, a browser-based learning surface for defining agents and associated workflows.
+- The studio persists its workspace locally in the browser under the `localStorage` key `agent-workflow-studio/v1`.
 - `GET /styles.css` serves the generated Tailwind stylesheet.
 - `GET /api/health` serves a JSON health response for smoke tests and tooling.
 
@@ -44,7 +45,3 @@ Local development in this repo targets macOS. Other platforms may need script an
 - `src/api/` holds API response modules such as the health endpoint.
 - `src/views/` holds HTML rendering modules for the starter UI.
 - Tests live next to the code they exercise under `src/`.
-
-## Application Screenshot
-
-![Starter app screenshot](docs/screenshots/home.png)

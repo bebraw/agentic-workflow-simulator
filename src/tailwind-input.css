@@ -7,6 +7,12 @@
   --color-app-text-soft: #5f554b;
   --color-app-accent: #0b6e4f;
   --color-app-accent-strong: #084c39;
+  --color-app-highlight: #f3c96b;
+  --color-app-sand: #ebddc8;
+  --color-app-rust: #8c4f2d;
+  --color-app-ink: #16342d;
+  --color-app-ink-soft: #bdd6c8;
+  --color-app-ink-contrast: #f7fbf6;
   --color-app-line: rgb(30 26 22 / 0.12);
 
   --shadow-panel: 0 24px 64px -42px rgb(30 26 22 / 0.34);
@@ -26,7 +32,8 @@
     font-family: Georgia, "Times New Roman", serif;
     text-rendering: optimizeLegibility;
     background:
-      radial-gradient(circle at top left, rgb(11 110 79 / 0.18), transparent 35%),
+      radial-gradient(circle at top left, rgb(11 110 79 / 0.16), transparent 34%),
+      radial-gradient(circle at top right, rgb(243 201 107 / 0.18), transparent 28%),
       linear-gradient(180deg, #f7f0e8 0%, var(--color-app-canvas) 100%);
   }
 

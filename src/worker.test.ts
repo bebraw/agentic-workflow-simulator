@@ -5,14 +5,15 @@ import { ensureGeneratedStylesheet } from "./test-support";
 ensureGeneratedStylesheet();
 
 describe("worker", () => {
-  it("renders the stub home page", async () => {
+  it("renders the studio home page", async () => {
     const response = await handleRequest(new Request("http://example.com/"));
 
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/html");
 
     const body = await response.text();
-    expect(body).toContain("vibe-template Worker");
+    expect(body).toContain("Agent Workflow Studio");
+    expect(body).toContain("localStorage");
     expect(body).toContain("/api/health");
   });
 
