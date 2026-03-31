@@ -7,8 +7,27 @@ test("renders the agent workflow studio", async ({ page }) => {
   await expect(page.getByText("Learning stages")).toBeVisible();
   await expect(page.getByRole("button", { name: "Explore" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("heading", { level: 2, name: "Study bundled workflows before building" })).toBeVisible();
+  await expect(page.getByLabel("Open help about bundled workflow examples")).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "Prepare a seminar briefing" })).toBeVisible();
+  await page.getByRole("button", { name: "Define Agents" }).click();
+  await expect(page.getByLabel("Open help about agent builder")).toBeVisible();
+  await page.getByRole("button", { name: "Build Workflow" }).click();
+  await expect(page.getByLabel("Open help about workflow actions")).toBeVisible();
   await expect(page.getByRole("button", { name: "Inspect Flow" })).toBeVisible();
+});
+
+test("persists the current stage in the query parameter", async ({ page }) => {
+  await page.goto("/?stage=build-workflow");
+
+  await expect(page.getByRole("button", { name: "Build Workflow" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(/stage=build-workflow/);
+  await expect(page.getByRole("heading", { level: 2, name: "Connect agents into a reusable sequence" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Inspect Flow" }).click();
+  await expect(page).toHaveURL(/stage=inspect-flow/);
+
+  await page.getByRole("button", { name: "Explore" }).click();
+  await expect(page).not.toHaveURL(/stage=/);
 });
 
 test("shows bundled workflow examples with parallel time slots", async ({ page }) => {
@@ -19,7 +38,7 @@ test("shows bundled workflow examples with parallel time slots", async ({ page }
 
   await page.getByRole("button", { name: "Inspect Flow" }).click();
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Prepare a seminar briefing" });
-  await expect(page.getByLabel("Seed packet")).toHaveValue(/Student request: Prepare a seminar briefing/);
+  await expect(page.getByRole("textbox", { name: "Seed packet" })).toHaveValue(/Student request: Prepare a seminar briefing/);
   await expect(page.getByText("T1 of 4")).toBeVisible();
   await expect(graphStage.getByText("Graph view for Prepare a seminar briefing")).toBeVisible();
   await expect(simulationStage.getByText("Mock execution at T1")).toBeVisible();
@@ -50,10 +69,15 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await expect(page.getByRole("heading", { level: 3, name: "Summarizer" })).toBeVisible();
 
   await page.getByRole("button", { name: "Build Workflow" }).click();
+  await expect(page.getByRole("button", { name: "Add agent action" })).toBeDisabled();
+  await expect(page.getByRole("textbox", { name: "Work at this time slot" })).toBeDisabled();
+  await expect(page.getByText("Choose at least one workflow agent above before adding actions.")).toBeVisible();
   await page.getByLabel("Workflow name").fill("Revise for an exam");
   await page.getByLabel("Desired outcome").fill("A compact revision pack for the final week.");
   await page.getByRole("checkbox", { name: /Summarizer/ }).check();
   await page.getByRole("checkbox", { name: /Reviewer/ }).check();
+  await expect(page.getByRole("button", { name: "Add agent action" })).toBeEnabled();
+  await expect(page.getByRole("textbox", { name: "Work at this time slot" })).toBeEnabled();
   await page.getByRole("spinbutton", { name: "Time slot" }).fill("1");
   await page.getByLabel("Acting agent").selectOption({ label: "Summarizer" });
   await page.getByRole("textbox", { name: "Work at this time slot" }).fill("Turn lecture slides into a short set of study notes.");
@@ -68,7 +92,7 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
 
   await expect(page.getByRole("button", { name: "Inspect Flow" })).toHaveAttribute("aria-pressed", "true");
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Revise for an exam" });
-  await expect(page.getByLabel("Seed packet")).toHaveValue(/Student request: Revise for an exam/);
+  await expect(page.getByRole("textbox", { name: "Seed packet" })).toHaveValue(/Student request: Revise for an exam/);
   await expect(page.getByText("T1 of 2")).toBeVisible();
   await expect(playbackStage.getByText("Pass the notes draft to Reviewer.", { exact: true })).toBeVisible();
   await expect(simulationStage.getByText("Mock execution at T1")).toBeVisible();
@@ -83,8 +107,8 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await page.getByRole("button", { name: "Inspect Flow" }).click();
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Revise for an exam" });
   await expect(page.getByText("T1 of 2")).toBeVisible();
-  await expect(page.getByLabel("Workspace JSON")).toHaveValue(/timeSteps/);
-  await expect(page.getByLabel("Workspace JSON")).toHaveValue(/Pass the notes draft to Reviewer/);
+  await expect(page.getByRole("textbox", { name: "Workspace JSON" })).toHaveValue(/timeSteps/);
+  await expect(page.getByRole("textbox", { name: "Workspace JSON" })).toHaveValue(/Pass the notes draft to Reviewer/);
 });
 
 test("serves the health endpoint", async ({ request }) => {

@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { exampleRoutes } from "../app-routes";
 import {
   countTimeSlots,
   countTimeSteps,
@@ -16,7 +15,7 @@ import {
 
 describe("renderHomePage", () => {
   it("renders the localStorage-backed studio shell, bundled examples, and stylesheet wiring", () => {
-    const html = renderHomePage(exampleRoutes);
+    const html = renderHomePage();
 
     expect(html).toContain("Agent Workflow Studio");
     expect(html).toContain("localStorage");
@@ -26,10 +25,26 @@ describe("renderHomePage", () => {
     expect(html).toContain("Prepare a seminar briefing");
     expect(html).toContain("Source Checker");
     expect(html).toContain("parallel");
+    expect(html).toContain("Open help about bundled workflow examples");
+    expect(html).toContain("Open help about learning guide");
+    expect(html).toContain("Open help about agent builder");
+    expect(html).toContain("Open help about workflow actions");
+    expect(html).toContain("Choose at least one workflow agent above before adding actions.");
     expect(html).toContain("Seed packet");
-    expect(html).toContain("Deterministic mock data only");
+    expect(html).toContain("Open help about workflow playback");
+    expect(html).toContain("Open help about seed packet");
     expect(html).toContain('data-stage-panel="inspect-flow" hidden');
     expect(html).toContain('rel="stylesheet" href="/styles.css"');
+  });
+
+  it("renders the requested learning stage from the stage query parameter", () => {
+    const html = renderHomePage("build-workflow");
+
+    expect(html).toContain("Connect the agents over time");
+    expect(html).toContain('data-stage-panel="build-workflow"');
+    expect(html).not.toContain('data-stage-panel="build-workflow" hidden');
+    expect(html).toContain('aria-label="Build Workflow" aria-pressed="true"');
+    expect(html).toContain('data-stage-panel="explore" hidden');
   });
 
   it("renders playback and graph helpers for empty, sequential, and parallel states", () => {
@@ -85,10 +100,13 @@ describe("renderHomePage", () => {
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("2 agents are working in parallel at this time.");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("Researcher");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("Finished packet");
+    expect(renderPlaybackStage(workflow, agents, 1)).toContain("Open help about handoff packets");
     expect(renderSimulationStage(workflow, agents, 0, "Student request: build a pack.")).toContain("Mock execution at T1");
     expect(renderSimulationStage(workflow, agents, 0, "Student request: build a pack.")).toContain("Packet arriving at T1");
+    expect(renderSimulationStage(workflow, agents, 0, "Student request: build a pack.")).toContain("Open help about mock execution");
     expect(renderSimulationStage(workflow, agents, 1, "Student request: build a pack.")).toContain("Final packet:");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain("Graph view for Parallel pass");
+    expect(renderWorkflowGraph(workflow, agents, 1)).toContain("Open help about workflow graph");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain("T2 delivers the final result");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain('data-graph-group-index="1"');
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain('title="Collect supporting notes."');

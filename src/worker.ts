@@ -18,7 +18,7 @@ export async function handleRequest(request: Request): Promise<Response> {
   }
 
   if (url.pathname === "/") {
-    return htmlResponse(renderHomePage(exampleRoutes));
+    return htmlResponse(renderHomePage(url.searchParams.get("stage")));
   }
 
   if (url.pathname === "/api/health") {

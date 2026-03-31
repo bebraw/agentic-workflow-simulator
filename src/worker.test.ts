@@ -21,7 +21,9 @@ describe("worker", () => {
     expect(body).toContain("Inspect Flow");
     expect(body).toContain("Seed packet");
     expect(body).toContain("Mock execution");
-    expect(body).toContain("/api/health");
+    expect(body).toContain("Open help about bundled workflow examples");
+    expect(body).toContain("Open help about workflow builder");
+    expect(body).toContain("Open help about workflow playback");
   });
 
   it("returns a JSON health response", async () => {

@@ -1,6 +1,6 @@
 # Development
 
-This document collects development-facing setup and workflow notes for the template.
+This document collects development-facing setup and workflow notes for the project.
 
 ## Agent Context
 
@@ -84,3 +84,18 @@ Use this expectation for routine changes:
 - `npm run ci:local:quiet` should also pass before proposing or landing the change.
 
 The quality gate currently runs the fast gate first, then the Playwright browser gate. The local and remote CI workflow runs separate fast and browser jobs, with repository-shape validation included in the fast job. The repo's local CI scripts now call the pinned `agent-ci` binary directly instead of going through a custom wrapper or ad hoc `npx` usage, and local browser installation should also go through the pinned `npm run playwright:install` script.
+
+## Project Structure
+
+- `src/worker.ts` is the Worker entry point and top-level router.
+- `src/api/` contains API handlers such as the health endpoint.
+- `src/views/` contains HTML rendering modules for the studio UI.
+- `specs/agent-workflow-studio/spec.md` is the living feature contract for the student-facing app.
+- `docs/adrs/` stores architecture decisions.
+- Tests live next to the code they exercise under `src/`.
+
+## Runtime Endpoints
+
+- `GET /` serves the Agent Workflow Studio.
+- `GET /styles.css` serves the generated Tailwind stylesheet.
+- `GET /api/health` serves a JSON health response for smoke tests and tooling.

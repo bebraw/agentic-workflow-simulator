@@ -1,47 +1,41 @@
 # agentic-workflow-simulator
 
-The app is designed for university students with little or no programming experience, so the interface focuses on plain-language agent definitions, explicit workflow time slots, visible handoffs between agents, bundled examples, staged views for exploration and building, a wider side-by-side workspace on large screens, an experimental DAG graph with animated packet flow, a deterministic mock execution panel for packet simulation, and inspectable saved state.
+`agentic-workflow-simulator` is a browser-based learning tool for university students who are new to programming but need to understand how agents and agent workflows work.
 
-Local development in this repo targets macOS. Other platforms may need script and tooling adjustments before the baseline workflow works as documented.
+Instead of starting from code, students can define agents in plain language, connect them into workflows, and inspect how work moves from one agent to the next over time.
 
-## Documentation
+![Agent Workflow Studio screenshot](docs/screenshots/home.png)
 
-- Development setup and local CI: `docs/development.md`
+## What the app does
+
+- Define agents with a clear job, input, and output.
+- Build workflows with explicit time slots and handoffs.
+- Show sequential and parallel execution patterns.
+- Visualize flow through playback cards and an animated DAG-style graph.
+- Simulate packet flow locally with deterministic mock data.
+- Save everything in the browser so students can experiment without accounts or backend setup.
+
+## Why it exists
+
+The project is designed as a teaching surface first.
+
+It aims to help students:
+
+- understand what an agent receives and returns
+- see how multi-agent workflows are structured
+- compare sequential and parallel work
+- inspect how handoffs affect downstream steps
+- experiment safely without needing to write code first
+
+## Quick start
+
+1. Install dependencies with `npm install`.
+2. Start the local app with `npm run dev`.
+3. Open `http://127.0.0.1:8787`.
+
+## Read more
+
+- Setup, commands, verification, and project structure: `docs/development.md`
+- Feature behavior and UI contract: `specs/agent-workflow-studio/spec.md`
 - Architecture decisions: `docs/adrs/README.md`
-- Feature and architecture specs: `specs/README.md`
-- Agent behavior and project rules: `AGENTS.md`
-
-## Runtime
-
-- Install dependencies with `npm install`.
-- The exact project Node.js version is pinned in `package.json`, and CI reads that value directly.
-- npm now comes from that pinned Node release instead of a separate repo version file.
-- Copy `.dev.vars.example` to `.dev.vars` before running projects that need local secrets.
-- Use repo-pinned CLI tools through `npx`, including `npx wrangler` for Cloudflare-based experiments.
-- Start the stub Worker with `npm run dev`, then open `http://127.0.0.1:8787`.
-- Rebuild the generated Tailwind stylesheet manually with `npm run build:css` when needed.
-
-## Verification
-
-- Run the fast local gate with `npm run quality:gate:fast` during normal iteration.
-- Run the baseline repo gate with `npm run quality:gate`.
-- Run the containerized local workflow with `npm run ci:local:quiet`.
-- If local Agent CI warns about `No such remote 'origin'`, set `GITHUB_REPO=owner/repo` in `.env.agent-ci`.
-- Retry a paused local CI run with `npm run ci:local:retry -- --name <runner-name>`.
-- Install the pinned Playwright browser with `npm run playwright:install`.
-- Run unit tests from colocated `src/**/*.test.ts` files with `npm test`.
-- Run browser tests from colocated `src/**/*.e2e.ts` files with `npm run e2e`.
-
-## Starter App
-
-- `GET /` serves the Agent Workflow Studio, a browser-based learning surface with staged views for exploring examples, defining agents, building workflows, and inspecting flow through synchronized playback, deterministic mock packet simulation, and an experimental SVG-based DAG spike.
-- The studio persists its workspace locally in the browser under the `localStorage` key `agent-workflow-studio/v1`.
-- `GET /styles.css` serves the generated Tailwind stylesheet.
-- `GET /api/health` serves a JSON health response for smoke tests and tooling.
-
-## Source Layout
-
-- `src/worker.ts` is the Worker entry point and top-level router.
-- `src/api/` holds API response modules such as the health endpoint.
-- `src/views/` holds HTML rendering modules for the starter UI.
-- Tests live next to the code they exercise under `src/`.
+- Repo-wide agent instructions: `AGENTS.md`

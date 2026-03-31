@@ -1,10 +1,5 @@
 import { escapeHtml } from "./shared";
 
-type RouteSummary = {
-  path: string;
-  purpose: string;
-};
-
 type AgentRecord = {
   id: string;
   name: string;
@@ -93,6 +88,10 @@ const learningStages: LearningStage[] = [
       "Use playback, the graph, and the saved JSON together to inspect dependencies, parallel branches, and the current stored state.",
   },
 ];
+
+function resolveLearningStage(stageId?: string | null): LearningStage {
+  return learningStages.find((stage) => stage.id === stageId) || learningStages[0];
+}
 
 const starterState: WorkspaceState = {
   agents: [
@@ -377,21 +376,13 @@ function buildWorkflowSimulation(workflow: WorkflowRecord, agents: AgentRecord[]
   });
 }
 
-export function renderHomePage(routes: RouteSummary[]): string {
-  const routeList = routes
-    .map(
-      (route) =>
-        `<li class="flex items-start gap-3 rounded-2xl border border-app-line/70 bg-white px-4 py-3">
-          <a class="rounded-full bg-app-accent/12 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-app-accent-strong underline decoration-app-accent/30 underline-offset-4" href="${escapeHtml(route.path)}">${escapeHtml(route.path)}</a>
-          <span class="text-sm leading-6 text-app-text-soft">${escapeHtml(route.purpose)}</span>
-        </li>`,
-    )
-    .join("");
+export function renderHomePage(initialStageId?: string | null): string {
+  const initialStage = resolveLearningStage(initialStageId);
   const stageNav = learningStages
     .map(
       (stage, index) =>
-        `<button aria-label="${escapeHtml(stage.label)}" aria-pressed="${index === 0}" class="h-full rounded-[1rem] border px-4 py-4 text-left transition ${
-          index === 0
+        `<button aria-label="${escapeHtml(stage.label)}" aria-pressed="${stage.id === initialStage.id}" class="h-full rounded-[1rem] border px-4 py-4 text-left transition ${
+          stage.id === initialStage.id
             ? "border-app-accent bg-app-accent text-white shadow-panel"
             : "border-app-line/75 bg-white text-app-text hover:border-app-accent/35 hover:text-app-accent-strong"
         }" data-stage-trigger="${escapeHtml(stage.id)}" type="button">
@@ -404,7 +395,6 @@ export function renderHomePage(routes: RouteSummary[]): string {
   const starterAgentCards = starterState.agents.map((agent) => renderAgentCard(agent)).join("");
   const starterWorkflowCards = starterState.workflows.map((workflow) => renderWorkflowPreview(workflow, starterState.agents)).join("");
   const starterWorkflow = starterState.workflows[0];
-  const initialStage = learningStages[0];
   const starterSimulationSeed = starterWorkflow ? buildDefaultSimulationSeed(starterWorkflow) : "";
 
   return `<!doctype html>
@@ -418,93 +408,118 @@ export function renderHomePage(routes: RouteSummary[]): string {
   <body class="min-h-screen bg-app-canvas text-app-text antialiased">
     <main class="mx-auto flex w-[min(100rem,calc(100vw-1rem))] flex-col gap-6 px-0 py-4 sm:w-[min(100rem,calc(100vw-2rem))] sm:py-6">
       <section class="overflow-hidden rounded-[1.5rem] border border-app-line/80 bg-app-surface shadow-panel">
-        <div class="grid gap-8 px-5 py-8 sm:px-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)] xl:px-10 xl:py-10">
+        <div class="grid gap-5 px-5 py-6 sm:px-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(20rem,0.9fr)] xl:px-10 xl:py-7">
           <div>
-            <p class="inline-flex items-center rounded-full border border-app-line/70 bg-app-canvas/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning surface</p>
-            <h1 class="mt-4 max-w-[10ch] text-5xl leading-none font-semibold tracking-[-0.06em] sm:text-7xl">${escapeHtml(appTitle)}</h1>
-            <p class="mt-5 max-w-3xl text-lg leading-8 text-app-text-soft">${escapeHtml(appDescription)}</p>
-            <div class="mt-6 grid gap-3 text-sm leading-6 text-app-text-soft sm:grid-cols-3">
-              <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-4">
-                <p class="font-semibold text-app-text">1. Define agents</p>
-                <p class="mt-2">Give each agent one clear job, the input it needs, and the output it should produce.</p>
-              </div>
-              <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-4">
-                <p class="font-semibold text-app-text">2. Add time slots</p>
-                <p class="mt-2">Use the same time slot for agents that work in parallel and different slots for handoffs over time.</p>
-              </div>
-              <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-4">
-                <p class="font-semibold text-app-text">3. Compare examples</p>
-                <p class="mt-2">Study the bundled workflows to see the difference between sequential and parallel execution.</p>
-              </div>
+            <div class="flex flex-wrap items-center gap-3">
+              <p class="inline-flex items-center rounded-full border border-app-line/70 bg-app-canvas/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-app-accent">Learning surface</p>
+              <p class="text-sm font-medium text-app-text-soft">Define agents, connect workflows, inspect handoffs.</p>
             </div>
+            <h1 class="mt-3 max-w-[14ch] text-4xl leading-[0.94] font-semibold tracking-[-0.06em] sm:text-6xl xl:max-w-none">${escapeHtml(appTitle)}</h1>
+            <p class="mt-4 max-w-3xl text-base leading-7 text-app-text-soft sm:text-lg">${escapeHtml(appDescription)}</p>
           </div>
-          <aside class="grid gap-4 self-start xl:pt-2">
-            <section class="rounded-[1rem] border border-app-line/70 bg-app-ink p-5 text-app-ink-contrast">
+          <aside class="self-start xl:pt-1">
+            <section class="rounded-[1rem] border border-app-line/70 bg-app-ink p-4 text-app-ink-contrast">
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace memory</p>
-              <p class="mt-3 text-3xl font-semibold tracking-[-0.04em]" id="workspace-status">Saved in this browser</p>
-              <p class="mt-3 text-sm leading-6 text-app-ink-soft">This version stores the learning workspace locally so students can experiment without accounts, servers, or setup friction.</p>
-            </section>
-            <section class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
-              <div class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Agents</p>
-                <p class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="agent-count">${starterState.agents.length}</p>
-              </div>
-              <div class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Workflows</p>
-                <p class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="workflow-count">${starterState.workflows.length}</p>
-              </div>
-              <div class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Agent actions</p>
-                <p class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="time-step-count">${countTimeSteps(starterState.workflows)}</p>
+              <p class="mt-2 text-2xl font-semibold tracking-[-0.04em]" id="workspace-status">Saved in this browser</p>
+              <p class="mt-2 text-sm leading-6 text-app-ink-soft">This version stores the learning workspace locally so students can experiment without accounts, servers, or setup friction.</p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button class="rounded-full border border-app-line/60 bg-white/10 px-3 py-2 text-sm font-semibold text-app-ink-contrast transition hover:border-app-accent/45 hover:text-white" id="load-example" type="button">Reset with example</button>
+                <button class="rounded-full border border-app-line/60 bg-white/10 px-3 py-2 text-sm font-semibold text-app-ink-soft transition hover:border-app-rust/45 hover:text-white" id="clear-workspace" type="button">Clear workspace</button>
               </div>
             </section>
           </aside>
-        </div>
-      </section>
-
-      <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-        <div class="grid gap-5 xl:grid-cols-[minmax(16rem,0.34fr)_minmax(0,1fr)] xl:items-center">
-          <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-5">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning stages</p>
-            <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="stage-title">${escapeHtml(initialStage.title)}</h2>
-            <p class="mt-3 text-sm leading-7 text-app-text-soft" id="stage-description">${escapeHtml(initialStage.description)}</p>
-          </div>
-          <div class="grid gap-4">
-            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-              <div class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4" id="stage-nav">${stageNav}</div>
-              <div class="flex flex-wrap gap-3 lg:justify-end">
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="load-example" type="button">Load example workspace</button>
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-rust/45 hover:text-app-rust" id="clear-workspace" type="button">Clear workspace</button>
-              </div>
+          <section class="grid gap-3 text-sm leading-6 text-app-text-soft sm:grid-cols-2 lg:grid-cols-3 xl:col-span-2 2xl:grid-cols-6">
+            <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-3.5">
+              <p class="font-semibold text-app-text">1. Define agents</p>
+              <p class="mt-1.5">Give each agent one clear job, the input it needs, and the output it should produce.</p>
             </div>
-          </div>
+            <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-3.5">
+              <p class="font-semibold text-app-text">2. Add time slots</p>
+              <p class="mt-1.5">Use the same time slot for agents that work in parallel and different slots for handoffs over time.</p>
+            </div>
+            <div class="rounded-[1rem] border border-app-line/70 bg-app-canvas/80 p-3.5">
+              <p class="font-semibold text-app-text">3. Compare examples</p>
+              <p class="mt-1.5">Study the bundled workflows to see the difference between sequential and parallel execution.</p>
+            </div>
+            <div class="rounded-[1rem] border border-app-line/70 bg-white p-3.5">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Agents</p>
+              <p class="mt-1.5 text-2xl font-semibold tracking-[-0.04em]" id="agent-count">${starterState.agents.length}</p>
+            </div>
+            <div class="rounded-[1rem] border border-app-line/70 bg-white p-3.5">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Workflows</p>
+              <p class="mt-1.5 text-2xl font-semibold tracking-[-0.04em]" id="workflow-count">${starterState.workflows.length}</p>
+            </div>
+            <div class="rounded-[1rem] border border-app-line/70 bg-white p-3.5">
+              <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Agent actions</p>
+              <p class="mt-1.5 text-2xl font-semibold tracking-[-0.04em]" id="time-step-count">${countTimeSteps(starterState.workflows)}</p>
+            </div>
+          </section>
+          <section class="grid gap-4 rounded-[1.25rem] border border-app-line/75 bg-white/92 p-4 xl:col-span-2 xl:grid-cols-[minmax(16rem,0.34fr)_minmax(0,1fr)] xl:items-center">
+            <div class="min-h-[10.5rem] rounded-[1rem] border border-app-line/70 bg-app-canvas/55 p-4 sm:min-h-[9.5rem]">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning stages</p>
+              <p class="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Current stage</p>
+              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="stage-title">${escapeHtml(initialStage.title)}</h2>
+              <p class="mt-3 text-sm leading-7 text-app-text-soft" id="stage-description">${escapeHtml(initialStage.description)}</p>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4" id="stage-nav">${stageNav}</div>
+          </section>
         </div>
       </section>
 
-      <section data-stage-panel="explore">
+      <section data-stage-panel="explore"${initialStage.id === "explore" ? "" : " hidden"}>
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Explore examples</p>
-            <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Study bundled workflows before building</h2>
-            <p class="mt-3 max-w-3xl text-sm leading-7 text-app-text-soft">These examples show how agents split work, where parallel branches appear, and what kind of handoff text keeps a workflow understandable to another student.</p>
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Explore examples</p>
+                <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Study bundled workflows before building</h2>
+              </div>
+              ${renderHelpToggle(
+                "bundled workflow examples",
+                "Start here to see how agent roles, shared time slots, and handoff packets work before you write your own workflow. The examples are meant to be borrowed from and compared, not treated as fixed templates.",
+              )}
+            </div>
             <div class="mt-6 grid gap-4">${starterWorkflowCards}</div>
           </section>
           <aside class="grid gap-6 xl:self-start">
             <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning guide</p>
-              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">What students should notice</h2>
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning guide</p>
+                  <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">What students should notice</h2>
+                </div>
+                ${renderHelpToggle(
+                  "learning guide",
+                  "Use these prompts while scanning the example workflows. They are cues for what to compare, not extra steps students need to complete.",
+                )}
+              </div>
               <div class="mt-5 grid gap-4">
                 <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                  <h3 class="text-lg font-semibold tracking-[-0.03em]">Parallel work still needs coordination</h3>
-                  <p class="mt-2 text-sm leading-7 text-app-text-soft">Two agents can work at the same time, but they still need a shared time slot and clear handoffs.</p>
+                  <div class="flex items-start justify-between gap-3">
+                    <h3 class="text-lg font-semibold tracking-[-0.03em]">Parallel work still needs coordination</h3>
+                    ${renderHelpToggle(
+                      "parallel coordination",
+                      "Two agents can work at the same time, but they still need a shared time slot and clear handoffs so the next slot knows what arrived from each branch.",
+                    )}
+                  </div>
                 </article>
                 <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                  <h3 class="text-lg font-semibold tracking-[-0.03em]">Time slots are not the same as agent count</h3>
-                  <p class="mt-2 text-sm leading-7 text-app-text-soft">A workflow might have five agent actions but only three time slots if some of those actions run in parallel.</p>
+                  <div class="flex items-start justify-between gap-3">
+                    <h3 class="text-lg font-semibold tracking-[-0.03em]">Time slots are not the same as agent count</h3>
+                    ${renderHelpToggle(
+                      "time slots",
+                      "A workflow can have more agent actions than time slots when some actions run in parallel. Count the T1, T2, T3 columns separately from the number of cards.",
+                    )}
+                  </div>
                 </article>
                 <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                  <h3 class="text-lg font-semibold tracking-[-0.03em]">Handoffs reveal dependencies</h3>
-                  <p class="mt-2 text-sm leading-7 text-app-text-soft">If a handoff is vague, the next slot will stall even when agents work in parallel.</p>
+                  <div class="flex items-start justify-between gap-3">
+                    <h3 class="text-lg font-semibold tracking-[-0.03em]">Handoffs reveal dependencies</h3>
+                    ${renderHelpToggle(
+                      "workflow handoffs",
+                      "If a handoff is vague, the next slot will stall even when agents work in parallel. Students should be able to say exactly what packet moves forward and who needs it next.",
+                    )}
+                  </div>
                 </article>
               </div>
             </section>
@@ -512,15 +527,18 @@ export function renderHomePage(routes: RouteSummary[]): string {
         </div>
       </section>
 
-      <section data-stage-panel="define-agents" hidden>
+      <section data-stage-panel="define-agents"${initialStage.id === "define-agents" ? "" : " hidden"}>
         <div class="grid gap-6 xl:grid-cols-[minmax(20rem,0.74fr)_minmax(0,1.26fr)] xl:items-start">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6 xl:sticky xl:top-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Agent builder</p>
                 <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Define the helpers in your system</h2>
-                <p class="mt-3 max-w-2xl text-sm leading-7 text-app-text-soft">Keep each agent narrow. Students should be able to say what the agent receives, what it returns, and why the workflow needs it.</p>
               </div>
+              ${renderHelpToggle(
+                "agent builder",
+                "Keep each agent narrow. Students should be able to say what the agent receives, what it returns, and why the workflow needs it without reading the whole workflow first.",
+              )}
             </div>
 
             <form class="mt-6 grid gap-4" id="agent-form">
@@ -557,21 +575,29 @@ export function renderHomePage(routes: RouteSummary[]): string {
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Agent library</p>
                 <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Compare the roles side by side</h2>
-                <p class="mt-3 max-w-3xl text-sm leading-7 text-app-text-soft">Once the agent definitions sit next to each other, it is easier for students to spot overlap, missing inputs, and duplicated responsibilities.</p>
               </div>
+              ${renderHelpToggle(
+                "agent library",
+                "Comparing saved agents side by side makes overlap visible. If two cards need the same inputs or promise the same output, the workflow probably needs fewer roles or clearer boundaries.",
+              )}
             </div>
             <div class="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-3" id="agent-list">${starterAgentCards}</div>
           </section>
         </div>
       </section>
 
-      <section data-stage-panel="build-workflow" hidden>
+      <section data-stage-panel="build-workflow"${initialStage.id === "build-workflow" ? "" : " hidden"}>
         <div class="grid gap-6 xl:grid-cols-[minmax(22rem,0.96fr)_minmax(0,1.04fr)] xl:items-start">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow builder</p>
-              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Connect agents into a reusable sequence</h2>
-              <p class="mt-3 max-w-2xl text-sm leading-7 text-app-text-soft">Pick the agents involved, then define each action with a time slot. Agents that share the same time slot are shown as running in parallel.</p>
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow builder</p>
+                <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Connect agents into a reusable sequence</h2>
+              </div>
+              ${renderHelpToggle(
+                "workflow builder",
+                "Pick the agents involved, then define each action with a time slot. Agents that share the same time slot are shown as running in parallel, so students can see branching without inventing a second workflow.",
+              )}
             </div>
 
             <form class="mt-6 grid gap-4" id="workflow-form">
@@ -588,33 +614,50 @@ export function renderHomePage(routes: RouteSummary[]): string {
               </div>
 
               <fieldset class="rounded-[1rem] border border-app-line/80 bg-app-canvas/70 p-4">
-                <legend class="px-2 text-sm font-semibold text-app-text">Agents in this workflow</legend>
-                <p class="mb-3 text-sm leading-6 text-app-text-soft">Choose the agents that participate in the workflow. This keeps the association explicit for students.</p>
+                <legend class="sr-only">Agents in this workflow</legend>
+                <div class="mb-3 flex items-start justify-between gap-3">
+                  <p class="text-sm font-semibold text-app-text">Agents in this workflow</p>
+                  ${renderHelpToggle(
+                    "workflow agents",
+                    "Choose the agents that participate in the workflow so the association stays explicit in the UI and in the saved JSON. This also keeps the later action list focused on valid roles.",
+                  )}
+                </div>
                 <div class="grid gap-3 sm:grid-cols-2" id="workflow-agent-options"></div>
                 <p class="mt-3 text-sm font-semibold text-app-rust" id="workflow-agent-error" role="status"></p>
               </fieldset>
 
               <fieldset class="rounded-[1rem] border border-app-line/80 bg-app-canvas/70 p-4">
-                <legend class="px-2 text-sm font-semibold text-app-text">Agent actions</legend>
-                <p class="mb-4 text-sm leading-6 text-app-text-soft">Give each action a time slot, the acting agent, the work performed there, and the handoff that follows. Reusing a time slot shows parallel work.</p>
-                <div class="grid gap-4 xl:grid-cols-[minmax(0,0.45fr)_minmax(0,0.75fr)_minmax(0,1fr)_minmax(0,1fr)]">
-                  <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-time">
-                    Time slot
-                    <input class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-time" min="1" name="workflow-time-step-time" step="1" type="number" value="1">
-                  </label>
-                  <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-agent">
-                    Acting agent
-                    <select class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-agent" name="workflow-time-step-agent"></select>
-                  </label>
-                  <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-work">
-                    Work at this time slot
-                    <textarea class="min-h-24 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-work" maxlength="220" name="workflow-time-step-work" placeholder="Researcher gathers examples for the first section"></textarea>
-                  </label>
-                  <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-handoff">
-                    What gets handed forward
-                    <textarea class="min-h-24 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-handoff" maxlength="220" name="workflow-time-step-handoff" placeholder="Pass annotated notes to Reviewer"></textarea>
-                  </label>
+                <legend class="sr-only">Agent actions</legend>
+                <div class="mb-4 flex items-start justify-between gap-3">
+                  <p class="text-sm font-semibold text-app-text">Agent actions</p>
+                  ${renderHelpToggle(
+                    "workflow actions",
+                    "Each action records a time slot, the acting agent, the work done there, and the handoff that follows. Reusing a time slot is how students model parallel work in the same workflow.",
+                  )}
                 </div>
+                <div class="grid gap-4">
+                  <div class="grid gap-4 lg:grid-cols-[minmax(0,0.4fr)_minmax(0,0.6fr)]">
+                    <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-time">
+                      Time slot
+                      <input class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-time" min="1" name="workflow-time-step-time" step="1" type="number" value="1">
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-agent">
+                      Acting agent
+                      <select class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-agent" name="workflow-time-step-agent"></select>
+                    </label>
+                  </div>
+                  <div class="grid gap-4 xl:grid-cols-2">
+                    <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-work">
+                      Work at this time slot
+                      <textarea class="min-h-28 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-work" maxlength="220" name="workflow-time-step-work" placeholder="Researcher gathers examples for the first section"></textarea>
+                    </label>
+                    <label class="grid gap-2 text-sm font-semibold text-app-text" for="workflow-time-step-handoff">
+                      What gets handed forward
+                      <textarea class="min-h-28 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="workflow-time-step-handoff" maxlength="220" name="workflow-time-step-handoff" placeholder="Pass annotated notes to Reviewer"></textarea>
+                    </label>
+                  </div>
+                </div>
+                <p class="text-sm leading-6 text-app-text-soft" id="time-step-hint">Choose at least one workflow agent above before adding actions.</p>
                 <div class="mt-4 flex flex-wrap items-center gap-3">
                   <button class="rounded-full bg-app-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-app-accent-strong" id="time-step-submit" type="button">Add agent action</button>
                   <button class="hidden rounded-full border border-app-line/70 bg-white px-5 py-3 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="time-step-cancel" type="button">Cancel edit</button>
@@ -633,24 +676,36 @@ export function renderHomePage(routes: RouteSummary[]): string {
           </section>
 
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow library</p>
-              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Compare complete workflows</h2>
-              <p class="mt-3 max-w-3xl text-sm leading-7 text-app-text-soft">Keep the saved workflow cards beside the builder so students can borrow patterns from previous examples while composing a new sequence.</p>
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow library</p>
+                <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Compare complete workflows</h2>
+              </div>
+              ${renderHelpToggle(
+                "workflow library",
+                "Keep saved workflow cards beside the builder so students can borrow timing, branching, and handoff patterns from previous examples while composing a new sequence.",
+              )}
             </div>
             <div class="mt-6 grid gap-4" id="workflow-list">${starterWorkflowCards}</div>
           </section>
         </div>
       </section>
 
-      <section data-stage-panel="inspect-flow" hidden>
+      <section data-stage-panel="inspect-flow"${initialStage.id === "inspect-flow" ? "" : " hidden"}>
         <div class="grid gap-6">
           <div class="grid gap-6 xl:grid-cols-[minmax(22rem,0.4fr)_minmax(0,1fr)] xl:items-start">
             <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
               <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-4">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow playback</p>
-                <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Watch the handoff</h2>
-                <p class="mt-3 text-sm leading-7 text-app-text-soft">Move through a workflow time slot by time slot, or let the graph animation run, to see who is active now, which agents branch in parallel, and where the data packet moves next.</p>
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow playback</p>
+                    <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Watch the handoff</h2>
+                  </div>
+                  ${renderHelpToggle(
+                    "workflow playback",
+                    "Move through a workflow time slot by time slot, or let the graph animation run, to see who is active now, which agents branch in parallel, and where the data packet moves next. Click any graph node to jump to its slot because the graph and the card playback stay synchronized on the same workflow state.",
+                  )}
+                </div>
               </div>
               <div class="mt-4 grid gap-4 rounded-[1.25rem] border border-app-line/75 bg-app-canvas/70 p-4">
                 <label class="grid gap-2 text-sm font-semibold text-app-text" for="playback-workflow">
@@ -664,22 +719,23 @@ export function renderHomePage(routes: RouteSummary[]): string {
                   <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next slot</button>
                   <button class="rounded-full bg-app-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-app-accent-strong" id="playback-auto" type="button">Play animation</button>
                 </div>
-                <div class="grid gap-4 lg:grid-cols-[minmax(14rem,0.38fr)_minmax(0,1fr)]">
-                  <div class="rounded-[1rem] border border-app-line/70 bg-white px-4 py-3">
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Active slot</p>
-                    <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
-                  </div>
-                  <div class="rounded-[1rem] border border-app-line/70 bg-app-ink p-4 text-sm leading-7 text-app-ink-contrast">
-                    Click any graph node to jump to its slot. The graph and the card playback stay synchronized on the same workflow state.
-                  </div>
+                <div class="rounded-[1rem] border border-app-line/70 bg-white px-4 py-3">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Active slot</p>
+                  <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
                 </div>
-                <label class="grid gap-2 text-sm font-semibold text-app-text" for="simulation-seed">
-                  Seed packet
+                <div class="grid gap-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <label class="text-sm font-semibold text-app-text" for="simulation-seed">Seed packet</label>
+                    <span class="rounded-full bg-app-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-app-accent-strong">Mock</span>
+                    ${renderHelpToggle(
+                      "seed packet",
+                      "The seed packet is the starting request that the deterministic simulation pushes through the workflow. This is mock data for teaching only, so no real model call leaves the browser.",
+                    )}
+                  </div>
                   <textarea class="min-h-28 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="simulation-seed" placeholder="Describe the student request or starting packet for this workflow.">${escapeHtml(starterSimulationSeed)}</textarea>
-                </label>
+                </div>
                 <div class="flex flex-wrap items-center gap-3">
                   <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="simulation-reset" type="button">Load workflow seed</button>
-                  <p class="text-xs leading-6 text-app-text-soft">Deterministic mock data only. No real model call leaves the browser.</p>
                 </div>
               </div>
             </section>
@@ -691,24 +747,27 @@ export function renderHomePage(routes: RouteSummary[]): string {
             <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
             <div id="simulation-stage">${starterWorkflow ? renderSimulationStage(starterWorkflow, starterState.agents, 0, starterSimulationSeed) : renderEmptySimulationStage()}</div>
           </div>
-          <div class="grid gap-6 2xl:grid-cols-[minmax(0,0.96fr)_minmax(20rem,0.74fr)]">
+          <div class="grid gap-6">
             <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-              <div class="flex items-end justify-between gap-4">
-                <div>
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace state</p>
-                  <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Inspect the JSON</h2>
+              <div class="grid gap-4 xl:grid-cols-[minmax(16rem,0.34fr)_minmax(0,1fr)] xl:items-start">
+                <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <div>
+                      <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace state</p>
+                      <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Inspect the JSON</h2>
+                    </div>
+                    ${renderHelpToggle(
+                      "workspace json",
+                      "The app keeps the entire studio in localStorage under the key agent-workflow-studio/v1. This panel helps students inspect the exact saved state behind the workflow editor and the visualizations.",
+                    )}
+                  </div>
+                  <button class="mt-4 rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
                 </div>
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
-              </div>
-              <p class="mt-3 text-sm leading-7 text-app-text-soft">The app keeps the entire studio in <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">localStorage</code> under the key <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">${escapeHtml(storageKey)}</code>.</p>
               <label class="sr-only" for="workspace-json">Workspace JSON</label>
-              <textarea class="mt-4 h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
-                JSON.stringify(starterState, null, 2),
-              )}</textarea>
-            </section>
-            <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Available routes</p>
-              <ul class="mt-4 grid gap-3">${routeList}</ul>
+                <textarea class="h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
+                  JSON.stringify(starterState, null, 2),
+                )}</textarea>
+              </div>
             </section>
           </div>
         </div>
@@ -810,6 +869,15 @@ function renderParallelActionCard(
   </article>`;
 }
 
+function renderHelpToggle(label: string, content: string): string {
+  return `<details class="group relative inline-block shrink-0">
+    <summary aria-label="Open help about ${escapeHtml(label)}" class="flex size-7 cursor-pointer list-none items-center justify-center rounded-full border border-app-line/70 bg-white text-xs font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong [&::-webkit-details-marker]:hidden">?</summary>
+    <div class="absolute right-0 z-20 mt-2 w-[min(20rem,calc(100vw-3rem))] rounded-[1rem] border border-app-line/80 bg-white p-4 text-sm leading-6 text-app-text-soft shadow-panel">${escapeHtml(
+      content,
+    ).replaceAll("\n", "<br>")}</div>
+  </details>`;
+}
+
 export function renderPlaybackWorkflowOptions(workflows: WorkflowRecord[]): string {
   return workflows
     .map(
@@ -853,7 +921,13 @@ export function renderPlaybackStage(workflow: WorkflowRecord, agents: AgentRecor
       <div class="mt-4 grid gap-3 md:grid-cols-2">${activeCards}</div>
     </article>
     <article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast">
-      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p>
+      <div class="flex items-start justify-between gap-3">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p>
+        ${renderHelpToggle(
+          "handoff packets",
+          "These cards show what each active agent hands forward after working in the current slot. Use them to compare how the next slot depends on the current one.",
+        )}
+      </div>
       <div class="mt-4 grid gap-3">${handoffCards}</div>
       <p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${nextGroup ? `Next slot: T${nextGroup.time}` : "Workflow outcome"}</p>
       <p class="mt-2 text-lg font-semibold tracking-[-0.02em]">${nextGroup ? `${nextGroup.steps.length} agent${nextGroup.steps.length === 1 ? "" : "s"} continue at T${nextGroup.time}` : escapeHtml(workflow.outcome)}</p>
@@ -909,10 +983,16 @@ export function renderSimulationStage(workflow: WorkflowRecord, agents: AgentRec
       <div class="mt-4 grid gap-3 md:grid-cols-2">${branchCards}</div>
     </article>
     <article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast">
-      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${nextGroup ? `Packet leaving for T${nextGroup.time}` : "Final mock output"}</p>
+      <div class="flex items-start justify-between gap-3">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${nextGroup ? `Packet leaving for T${nextGroup.time}` : "Final mock output"}</p>
+        ${renderHelpToggle(
+          "mock execution",
+          nextGroup
+            ? "Students can compare what entered the slot, what each agent changed, and what the next slot receives."
+            : "Students can compare the final mock packet with the workflow outcome and see how the earlier handoffs shaped it.",
+        )}
+      </div>
       <p class="mt-3 text-sm leading-7">${escapeHtml(currentGroup.outgoingPacket)}</p>
-      <p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this helps</p>
-      <p class="mt-2 text-sm leading-7">${nextGroup ? "Students can compare what entered the slot, what each agent changed, and what the next slot receives." : "Students can compare the final mock packet with the workflow outcome and see how the earlier handoffs shaped it."}</p>
     </article>
   </div>`;
 }
@@ -987,7 +1067,15 @@ export function renderWorkflowGraph(workflow: WorkflowRecord, agents: AgentRecor
   return `<div class="grid gap-4">
     <div class="rounded-[1.25rem] border border-app-line/80 bg-white/80 p-4">
       <div class="flex flex-wrap items-center justify-between gap-3">
-        <p class="text-sm font-semibold text-app-text">Graph view for ${escapeHtml(workflow.name)}</p>
+        <div class="flex items-center gap-3">
+          <p class="text-sm font-semibold text-app-text">Graph view for ${escapeHtml(workflow.name)}</p>
+          ${renderHelpToggle(
+            "workflow graph",
+            nextGroup
+              ? `The DAG makes dependencies visible: every active branch at T${activeGroup.time} feeds the next slot at T${nextGroup.time}.`
+              : workflow.outcome,
+          )}
+        </div>
         <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${activeGroup.steps.length > 1 ? `${activeGroup.steps.length} active branches at T${activeGroup.time}` : `Single active branch at T${activeGroup.time}`}</p>
       </div>
       <div class="mt-4 overflow-x-auto pb-2">
@@ -1000,17 +1088,11 @@ export function renderWorkflowGraph(workflow: WorkflowRecord, agents: AgentRecor
         </div>
       </div>
     </div>
-    <div class="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-      <article class="rounded-[1rem] border border-app-line/75 bg-white p-4">
-        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Active data packet</p>
-        <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">${nextGroup ? `Packets leave T${activeGroup.time} and head to T${nextGroup.time}` : `T${activeGroup.time} delivers the final result`}</p>
-        <p class="mt-2 text-sm leading-7 text-app-text-soft">${activeGroup.steps.map((step) => escapeHtml(step.handoff)).join(" ")}</p>
-      </article>
-      <article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-4 text-app-ink-contrast">
-        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this spike matters</p>
-        <p class="mt-2 text-sm leading-7">${nextGroup ? `The DAG makes dependencies visible: every active branch at T${activeGroup.time} feeds the next slot at T${nextGroup.time}.` : escapeHtml(workflow.outcome)}</p>
-      </article>
-    </div>
+    <article class="rounded-[1rem] border border-app-line/75 bg-white p-4">
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Active data packet</p>
+      <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">${nextGroup ? `Packets leave T${activeGroup.time} and head to T${nextGroup.time}` : `T${activeGroup.time} delivers the final result`}</p>
+      <p class="mt-2 text-sm leading-7 text-app-text-soft">${activeGroup.steps.map((step) => escapeHtml(step.handoff)).join(" ")}</p>
+    </article>
   </div>`;
 }
 
@@ -1106,13 +1188,14 @@ function createClientScript(): string {
 (() => {
   const storageKey = ${JSON.stringify(storageKey)};
   const learningStages = ${serializeJsonForScript(learningStages)};
+  const defaultStageId = learningStages[0]?.id || "explore";
   const emptyState = { agents: [], workflows: [] };
   const seedNode = document.getElementById("workspace-seed");
   const seedState = seedNode ? normalizeState(JSON.parse(seedNode.textContent || "{}")) : emptyState;
   const state = loadState();
   let draftTimeSteps = [];
   let editingTimeStepId = "";
-  let activeStage = learningStages[0]?.id || "explore";
+  let activeStage = resolveStageFromUrl();
   const playback = { workflowId: "", groupIndex: 0, isAutoPlaying: false, timerId: 0 };
   const simulation = { workflowId: "", seedInput: "" };
 
@@ -1145,6 +1228,7 @@ function createClientScript(): string {
     workflowTimeStepAgent: document.getElementById("workflow-time-step-agent"),
     workflowTimeStepWork: document.getElementById("workflow-time-step-work"),
     workflowTimeStepHandoff: document.getElementById("workflow-time-step-handoff"),
+    timeStepHint: document.getElementById("time-step-hint"),
     timeStepSubmit: document.getElementById("time-step-submit"),
     timeStepCancel: document.getElementById("time-step-cancel"),
     timeStepError: document.getElementById("time-step-error"),
@@ -1186,6 +1270,11 @@ function createClientScript(): string {
     resetWorkflowForm();
     persist();
     render();
+  });
+
+  window.addEventListener("popstate", () => {
+    activeStage = resolveStageFromUrl();
+    renderStage();
   });
 
   refs.copyJson?.addEventListener("click", async () => {
@@ -1592,6 +1681,30 @@ function createClientScript(): string {
     simulation.seedInput = "";
   }
 
+  function resolveStage(stageId) {
+    return learningStages.find((stage) => stage.id === stageId) || learningStages[0];
+  }
+
+  function resolveStageFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return resolveStage(params.get("stage"))?.id || defaultStageId;
+  }
+
+  function persistStageInUrl() {
+    const url = new URL(window.location.href);
+    if (activeStage === defaultStageId) {
+      url.searchParams.delete("stage");
+    } else {
+      url.searchParams.set("stage", activeStage);
+    }
+
+    const nextUrl = url.pathname + url.search + url.hash;
+    const currentUrl = window.location.pathname + window.location.search + window.location.hash;
+    if (nextUrl !== currentUrl) {
+      window.history.replaceState({}, "", nextUrl);
+    }
+  }
+
   function render() {
     refs.agentCount.textContent = String(state.agents.length);
     refs.workflowCount.textContent = String(state.workflows.length);
@@ -1607,8 +1720,9 @@ function createClientScript(): string {
   }
 
   function renderStage() {
-    const stage = learningStages.find((candidate) => candidate.id === activeStage) || learningStages[0];
+    const stage = resolveStage(activeStage);
     activeStage = stage?.id || "explore";
+    persistStageInUrl();
 
     if (refs.stageTitle instanceof HTMLElement && stage) {
       refs.stageTitle.textContent = stage.title;
@@ -1666,19 +1780,48 @@ function createClientScript(): string {
   }
 
   function renderTimeStepAgentOptions(selectedAgentIds) {
-    if (!(refs.workflowTimeStepAgent instanceof HTMLSelectElement)) {
+    if (!(refs.workflowTimeStepAgent instanceof HTMLSelectElement) || !(refs.timeStepSubmit instanceof HTMLButtonElement)) {
       return;
     }
 
     const availableAgents = state.agents.filter((agent) => selectedAgentIds.has(agent.id));
     if (availableAgents.length === 0) {
       refs.workflowTimeStepAgent.disabled = true;
-      refs.workflowTimeStepAgent.innerHTML = '<option value="">Select a workflow agent first</option>';
+      refs.workflowTimeStepAgent.innerHTML = '<option value="">Pick agents first</option>';
+      refs.timeStepSubmit.disabled = true;
+      refs.timeStepSubmit.className =
+        "rounded-full border border-app-line/70 bg-app-line/20 px-5 py-3 text-sm font-semibold text-app-text-soft";
+      if (refs.workflowTimeStepWork instanceof HTMLTextAreaElement) {
+        refs.workflowTimeStepWork.disabled = true;
+        refs.workflowTimeStepWork.placeholder = "Choose at least one workflow agent above to describe the work in this slot.";
+      }
+      if (refs.workflowTimeStepHandoff instanceof HTMLTextAreaElement) {
+        refs.workflowTimeStepHandoff.disabled = true;
+        refs.workflowTimeStepHandoff.placeholder = "Choose at least one workflow agent above to describe what gets handed forward.";
+      }
+      if (refs.timeStepHint instanceof HTMLElement) {
+        refs.timeStepHint.textContent = "Choose at least one workflow agent above before adding actions.";
+      }
       return;
     }
 
     const currentValue = refs.workflowTimeStepAgent.value;
     refs.workflowTimeStepAgent.disabled = false;
+    refs.timeStepSubmit.disabled = false;
+    refs.timeStepSubmit.className =
+      "rounded-full bg-app-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-app-accent-strong";
+    if (refs.workflowTimeStepWork instanceof HTMLTextAreaElement) {
+      refs.workflowTimeStepWork.disabled = false;
+      refs.workflowTimeStepWork.placeholder = "Researcher gathers examples for the first section";
+    }
+    if (refs.workflowTimeStepHandoff instanceof HTMLTextAreaElement) {
+      refs.workflowTimeStepHandoff.disabled = false;
+      refs.workflowTimeStepHandoff.placeholder = "Pass annotated notes to Reviewer";
+    }
+    if (refs.timeStepHint instanceof HTMLElement) {
+      refs.timeStepHint.textContent =
+        "Use the same time slot for parallel work. Change the slot number when the next handoff depends on the previous one.";
+    }
     refs.workflowTimeStepAgent.innerHTML = availableAgents
       .map((agent) => '<option value="' + escapeHtml(agent.id) + '">' + escapeHtml(agent.name) + "</option>")
       .join("");
@@ -1843,7 +1986,7 @@ function createClientScript(): string {
     refs.playbackNext.disabled = playback.groupIndex === groups.length - 1;
     refs.playbackAuto.disabled = groups.length <= 1;
     refs.playbackAuto.textContent = playback.isAutoPlaying ? "Pause animation" : "Play animation";
-    refs.playbackStage.innerHTML = '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Active at T' + group.time + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (group.steps.length > 1 ? group.steps.length + ' agents are working in parallel at this time.' : 'One agent is active in this slot.') + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + activeCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p><div class="mt-4 grid gap-3">' + handoffCards + '</div><p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Next slot: T' + nextGroup.time : 'Workflow outcome') + '</p><p class="mt-2 text-lg font-semibold tracking-[-0.02em]">' + (nextGroup ? nextGroup.steps.length + ' agent' + (nextGroup.steps.length === 1 ? '' : 's') + ' continue at T' + nextGroup.time : escapeHtml(activeWorkflow.outcome)) + '</p></article></div>';
+    refs.playbackStage.innerHTML = '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Active at T' + group.time + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (group.steps.length > 1 ? group.steps.length + ' agents are working in parallel at this time.' : 'One agent is active in this slot.') + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + activeCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><div class="flex items-start justify-between gap-3"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p>' + renderHelpToggle('handoff packets', 'These cards show what each active agent hands forward after working in the current slot. Use them to compare how the next slot depends on the current one.') + '</div><div class="mt-4 grid gap-3">' + handoffCards + '</div><p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Next slot: T' + nextGroup.time : 'Workflow outcome') + '</p><p class="mt-2 text-lg font-semibold tracking-[-0.02em]">' + (nextGroup ? nextGroup.steps.length + ' agent' + (nextGroup.steps.length === 1 ? '' : 's') + ' continue at T' + nextGroup.time : escapeHtml(activeWorkflow.outcome)) + '</p></article></div>';
     refs.simulationStage.innerHTML = renderSimulationStage(activeWorkflow, playback.groupIndex, simulation.seedInput);
     refs.workflowGraphStage.innerHTML = renderWorkflowGraphStage(activeWorkflow, playback.groupIndex);
   }
@@ -1860,6 +2003,10 @@ function createClientScript(): string {
     }
 
     refs.simulationStage.innerHTML = renderSimulationStage(workflow, playback.groupIndex, simulation.seedInput);
+  }
+
+  function renderHelpToggle(label, content) {
+    return '<details class="group relative inline-block shrink-0"><summary aria-label="Open help about ' + escapeHtml(label) + '" class="flex size-7 cursor-pointer list-none items-center justify-center rounded-full border border-app-line/70 bg-white text-xs font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong [&::-webkit-details-marker]:hidden">?</summary><div class="absolute right-0 z-20 mt-2 w-[min(20rem,calc(100vw-3rem))] rounded-[1rem] border border-app-line/80 bg-white p-4 text-sm leading-6 text-app-text-soft shadow-panel">' + escapeHtml(content).replaceAll("\\n", "<br>") + "</div></details>";
   }
 
   function renderWorkflowGraphStage(workflow, groupIndex) {
@@ -1897,7 +2044,7 @@ function createClientScript(): string {
       })
       .join("");
 
-    return '<div class="grid gap-4"><div class="rounded-[1.25rem] border border-app-line/80 bg-white/80 p-4"><div class="flex flex-wrap items-center justify-between gap-3"><p class="text-sm font-semibold text-app-text">Graph view for ' + escapeHtml(workflow.name) + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (activeGroup.steps.length > 1 ? activeGroup.steps.length + " active branches at T" + activeGroup.time : "Single active branch at T" + activeGroup.time) + '</p></div><div class="mt-4 overflow-x-auto pb-2"><div class="relative" style="height:' + layout.height + "px;width:" + layout.width + 'px"><svg aria-hidden="true" class="absolute inset-0 h-full w-full" viewBox="0 0 ' + layout.width + " " + layout.height + '">' + columnGuides + edges + "</svg>" + nodes + '</div></div></div><div class="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"><article class="rounded-[1rem] border border-app-line/75 bg-white p-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Active data packet</p><p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">' + (nextGroup ? "Packets leave T" + activeGroup.time + " and head to T" + nextGroup.time : "T" + activeGroup.time + " delivers the final result") + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + activeGroup.steps.map((step) => escapeHtml(step.handoff)).join(" ") + '</p></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-4 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this spike matters</p><p class="mt-2 text-sm leading-7">' + (nextGroup ? "The DAG makes dependencies visible: every active branch at T" + activeGroup.time + " feeds the next slot at T" + nextGroup.time + "." : escapeHtml(workflow.outcome)) + "</p></article></div></div>";
+    return '<div class="grid gap-4"><div class="rounded-[1.25rem] border border-app-line/80 bg-white/80 p-4"><div class="flex flex-wrap items-center justify-between gap-3"><div class="flex items-center gap-3"><p class="text-sm font-semibold text-app-text">Graph view for ' + escapeHtml(workflow.name) + '</p>' + renderHelpToggle('workflow graph', nextGroup ? "The DAG makes dependencies visible: every active branch at T" + activeGroup.time + " feeds the next slot at T" + nextGroup.time + "." : workflow.outcome) + '</div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (activeGroup.steps.length > 1 ? activeGroup.steps.length + " active branches at T" + activeGroup.time : "Single active branch at T" + activeGroup.time) + '</p></div><div class="mt-4 overflow-x-auto pb-2"><div class="relative" style="height:' + layout.height + "px;width:" + layout.width + 'px"><svg aria-hidden="true" class="absolute inset-0 h-full w-full" viewBox="0 0 ' + layout.width + " " + layout.height + '">' + columnGuides + edges + "</svg>" + nodes + '</div></div></div><article class="rounded-[1rem] border border-app-line/75 bg-white p-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Active data packet</p><p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">' + (nextGroup ? "Packets leave T" + activeGroup.time + " and head to T" + nextGroup.time : "T" + activeGroup.time + " delivers the final result") + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + activeGroup.steps.map((step) => escapeHtml(step.handoff)).join(" ") + "</p></article></div>";
   }
 
   function renderSimulationStage(workflow, groupIndex, seedInput) {
@@ -1912,7 +2059,7 @@ function createClientScript(): string {
       .map((branch) => '<article class="rounded-[0.9rem] border border-app-line/70 bg-white p-4"><div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + escapeHtml(branch.agent.name) + '</p><p class="mt-2 text-sm leading-6 text-app-text-soft">' + escapeHtml(branch.step.work) + '</p></div><span class="rounded-full bg-app-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-app-accent-strong">Mock transform</span></div><div class="mt-4 rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 px-4 py-3 text-sm leading-6 text-app-text-soft"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Produces</p><p class="mt-2">' + escapeHtml(branch.outputPacket) + '</p><p class="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff</p><p class="mt-2">' + escapeHtml(branch.step.handoff) + "</p></div></article>")
       .join("");
 
-    return '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Mock execution at T' + currentGroup.time + '</p><h3 class="mt-2 text-2xl font-semibold tracking-[-0.03em] text-app-text">Push a packet through the current slot</h3></div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">' + (currentGroup.branches.length > 1 ? currentGroup.branches.length + ' mocked branches running in parallel' : 'Single mocked branch') + '</p></div><div class="mt-4 rounded-[0.9rem] border border-app-line/70 bg-app-canvas/70 px-4 py-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Packet arriving at T' + currentGroup.time + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + escapeHtml(currentGroup.incomingPacket) + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + branchCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Packet leaving for T' + nextGroup.time : 'Final mock output') + '</p><p class="mt-3 text-sm leading-7">' + escapeHtml(currentGroup.outgoingPacket) + '</p><p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this helps</p><p class="mt-2 text-sm leading-7">' + (nextGroup ? 'Students can compare what entered the slot, what each agent changed, and what the next slot receives.' : 'Students can compare the final mock packet with the workflow outcome and see how the earlier handoffs shaped it.') + '</p></article></div>';
+    return '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Mock execution at T' + currentGroup.time + '</p><h3 class="mt-2 text-2xl font-semibold tracking-[-0.03em] text-app-text">Push a packet through the current slot</h3></div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">' + (currentGroup.branches.length > 1 ? currentGroup.branches.length + ' mocked branches running in parallel' : 'Single mocked branch') + '</p></div><div class="mt-4 rounded-[0.9rem] border border-app-line/70 bg-app-canvas/70 px-4 py-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Packet arriving at T' + currentGroup.time + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + escapeHtml(currentGroup.incomingPacket) + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + branchCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><div class="flex items-start justify-between gap-3"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Packet leaving for T' + nextGroup.time : 'Final mock output') + '</p>' + renderHelpToggle('mock execution', nextGroup ? 'Students can compare what entered the slot, what each agent changed, and what the next slot receives.' : 'Students can compare the final mock packet with the workflow outcome and see how the earlier handoffs shaped it.') + '</div><p class="mt-3 text-sm leading-7">' + escapeHtml(currentGroup.outgoingPacket) + '</p></article></div>';
   }
 
   function buildWorkflowSimulation(workflow, seedInput) {
