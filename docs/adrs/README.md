@@ -30,6 +30,7 @@ Skip an ADR for small, reversible, or purely tactical choices.
 | [ADR-012](./ADR-012-constrain-local-tooling-to-macos.md)                | Accepted   | Treat macOS as the local tooling baseline and use direct pinned Agent CI scripts.            |
 | [ADR-013](./ADR-013-return-to-npm-for-agent-ci-compatibility.md)        | Accepted   | Return to npm because local Agent CI remains unreliable with pnpm warmed dependency mounts.  |
 | [ADR-014](./ADR-014-store-student-workspaces-in-localstorage.md)        | Accepted   | Store the student-facing agent/workflow studio state in browser localStorage for now.        |
+| [ADR-015](./ADR-015-simulate-agent-packets-locally.md)                  | Accepted   | Simulate agent packet transforms locally instead of calling live models in the teaching UI.  |
 
 ## Creating A New ADR
 

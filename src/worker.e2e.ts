@@ -14,16 +14,21 @@ test("renders the agent workflow studio", async ({ page }) => {
 test("shows bundled workflow examples with parallel time slots", async ({ page }) => {
   await page.goto("/");
   const playbackStage = page.locator("#playback-stage");
+  const simulationStage = page.locator("#simulation-stage");
   const graphStage = page.locator("#workflow-graph-stage");
 
   await page.getByRole("button", { name: "Inspect Flow" }).click();
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Prepare a seminar briefing" });
+  await expect(page.getByLabel("Seed packet")).toHaveValue(/Student request: Prepare a seminar briefing/);
   await expect(page.getByText("T1 of 4")).toBeVisible();
   await expect(graphStage.getByText("Graph view for Prepare a seminar briefing")).toBeVisible();
+  await expect(simulationStage.getByText("Mock execution at T1")).toBeVisible();
   await page.getByRole("button", { name: "Focus T2: Source Checker" }).click();
   await expect(page.getByText("T2 of 4")).toBeVisible();
   await expect(playbackStage.getByText("2 agents are working in parallel at this time.")).toBeVisible();
   await expect(graphStage.getByText("Packets leave T2 and head to T3")).toBeVisible();
+  await expect(simulationStage.getByText("2 mocked branches running in parallel")).toBeVisible();
+  await expect(simulationStage.getByText("Merged packet for T3")).toBeVisible();
   await expect(playbackStage.getByText("Gather concepts, examples, and candidate references for each section.")).toBeVisible();
   await expect(playbackStage.getByText("Verify the strongest references and flag any weak or missing citations.")).toBeVisible();
 });
@@ -31,6 +36,7 @@ test("shows bundled workflow examples with parallel time slots", async ({ page }
 test("creates time-stepped workflows that survive reloads", async ({ page }) => {
   await page.goto("/");
   const playbackStage = page.locator("#playback-stage");
+  const simulationStage = page.locator("#simulation-stage");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
@@ -62,11 +68,14 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
 
   await expect(page.getByRole("button", { name: "Inspect Flow" })).toHaveAttribute("aria-pressed", "true");
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Revise for an exam" });
+  await expect(page.getByLabel("Seed packet")).toHaveValue(/Student request: Revise for an exam/);
   await expect(page.getByText("T1 of 2")).toBeVisible();
   await expect(playbackStage.getByText("Pass the notes draft to Reviewer.", { exact: true })).toBeVisible();
+  await expect(simulationStage.getByText("Mock execution at T1")).toBeVisible();
   await page.getByRole("button", { name: "Next slot" }).click();
   await expect(page.getByText("T2 of 2")).toBeVisible();
   await expect(playbackStage.getByText("Return the corrected study guide as the final outcome.", { exact: true })).toBeVisible();
+  await expect(simulationStage.getByText("Final mock output")).toBeVisible();
   await page.reload();
 
   await page.getByRole("button", { name: "Define Agents" }).click();

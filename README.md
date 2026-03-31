@@ -1,6 +1,6 @@
 # agentic-workflow-simulator
 
-The app is designed for university students with little or no programming experience, so the interface focuses on plain-language agent definitions, explicit workflow time slots, visible handoffs between agents, bundled examples, staged views for exploration and building, a wider side-by-side workspace on large screens, an experimental DAG graph with animated packet flow, and inspectable saved state.
+The app is designed for university students with little or no programming experience, so the interface focuses on plain-language agent definitions, explicit workflow time slots, visible handoffs between agents, bundled examples, staged views for exploration and building, a wider side-by-side workspace on large screens, an experimental DAG graph with animated packet flow, a deterministic mock execution panel for packet simulation, and inspectable saved state.
 
 Local development in this repo targets macOS. Other platforms may need script and tooling adjustments before the baseline workflow works as documented.
 
@@ -34,7 +34,7 @@ Local development in this repo targets macOS. Other platforms may need script an
 
 ## Starter App
 
-- `GET /` serves the Agent Workflow Studio, a browser-based learning surface with staged views for exploring examples, defining agents, building workflows, and inspecting flow through synchronized playback plus an experimental SVG-based DAG spike.
+- `GET /` serves the Agent Workflow Studio, a browser-based learning surface with staged views for exploring examples, defining agents, building workflows, and inspecting flow through synchronized playback, deterministic mock packet simulation, and an experimental SVG-based DAG spike.
 - The studio persists its workspace locally in the browser under the `localStorage` key `agent-workflow-studio/v1`.
 - `GET /styles.css` serves the generated Tailwind stylesheet.
 - `GET /api/health` serves a JSON health response for smoke tests and tooling.

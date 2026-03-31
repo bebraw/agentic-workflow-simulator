@@ -4,11 +4,13 @@ import {
   countTimeSlots,
   countTimeSteps,
   renderEmptyPlaybackStage,
+  renderEmptySimulationStage,
   renderEmptyWorkflowGraph,
   renderWorkflowGraph,
   renderHomePage,
   renderPlaybackStage,
   renderPlaybackWorkflowOptions,
+  renderSimulationStage,
   resolveAgentName,
 } from "./home";
 
@@ -24,6 +26,8 @@ describe("renderHomePage", () => {
     expect(html).toContain("Prepare a seminar briefing");
     expect(html).toContain("Source Checker");
     expect(html).toContain("parallel");
+    expect(html).toContain("Seed packet");
+    expect(html).toContain("Deterministic mock data only");
     expect(html).toContain('data-stage-panel="inspect-flow" hidden');
     expect(html).toContain('rel="stylesheet" href="/styles.css"');
   });
@@ -76,10 +80,14 @@ describe("renderHomePage", () => {
     };
 
     expect(renderEmptyPlaybackStage()).toContain("Create a workflow with at least one time slot");
+    expect(renderEmptySimulationStage()).toContain("deterministic mock packets");
     expect(renderEmptyWorkflowGraph()).toContain("experimental DAG graph");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("2 agents are working in parallel at this time.");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("Researcher");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("Finished packet");
+    expect(renderSimulationStage(workflow, agents, 0, "Student request: build a pack.")).toContain("Mock execution at T1");
+    expect(renderSimulationStage(workflow, agents, 0, "Student request: build a pack.")).toContain("Packet arriving at T1");
+    expect(renderSimulationStage(workflow, agents, 1, "Student request: build a pack.")).toContain("Final packet:");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain("Graph view for Parallel pass");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain("T2 delivers the final result");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain('data-graph-group-index="1"');

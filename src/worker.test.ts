@@ -19,6 +19,8 @@ describe("worker", () => {
     expect(body).toContain("Prepare a seminar briefing");
     expect(body).toContain("Source Checker");
     expect(body).toContain("Inspect Flow");
+    expect(body).toContain("Seed packet");
+    expect(body).toContain("Mock execution");
     expect(body).toContain("/api/health");
   });
 

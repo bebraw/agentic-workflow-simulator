@@ -39,7 +39,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Run fast quality gate
         shell: bash
@@ -61,7 +61,7 @@ jobs:
 
       - name: Install dependencies
         shell: bash
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Run browser quality gate
         shell: bash

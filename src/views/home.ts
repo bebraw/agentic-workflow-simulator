@@ -46,6 +46,19 @@ type LearningStage = {
   description: string;
 };
 
+type SimulationBranch = {
+  agent: AgentRecord;
+  step: TimeStepRecord;
+  outputPacket: string;
+};
+
+type SimulationGroup = {
+  time: number;
+  incomingPacket: string;
+  branches: SimulationBranch[];
+  outgoingPacket: string;
+};
+
 const appTitle = "Agent Workflow Studio";
 const appDescription =
   "A browser-based learning tool where students define simple AI agents, connect them into workflows, and inspect the result without writing code first.";
@@ -252,6 +265,118 @@ const starterState: WorkspaceState = {
   ],
 };
 
+function resolveAgentRecord(agents: AgentRecord[], agentId: string): AgentRecord {
+  return (
+    agents.find((agent) => agent.id === agentId) ?? {
+      id: agentId,
+      name: "Missing agent",
+      responsibility: "No saved definition is available for this agent.",
+      inputs: "Unknown",
+      outputs: "Unknown",
+    }
+  );
+}
+
+function buildDefaultSimulationSeed(workflow: WorkflowRecord): string {
+  return `Student request: ${workflow.name}.\nTarget outcome: ${workflow.outcome}\nNeed a clear packet that can move through each handoff.`;
+}
+
+function normalizeSimulationSeed(seedInput: string, workflow: WorkflowRecord): string {
+  const trimmed = seedInput.trim();
+  return trimmed || buildDefaultSimulationSeed(workflow);
+}
+
+function summarizePacketText(text: string, maxLength = 120): string {
+  const compact = text.replace(/\s+/g, " ").trim();
+  if (compact.length <= maxLength) {
+    return compact;
+  }
+
+  return `${compact.slice(0, Math.max(maxLength - 1, 1)).trimEnd()}…`;
+}
+
+function createMockPacket(agent: AgentRecord, step: TimeStepRecord, incomingPacket: string, workflow: WorkflowRecord): string {
+  const roleSignature = `${agent.name} ${agent.responsibility} ${agent.outputs}`.toLowerCase();
+  const focus = summarizePacketText(incomingPacket, 84);
+  const work = summarizePacketText(step.work, 88);
+  const handoff = summarizePacketText(step.handoff, 84);
+
+  if (roleSignature.includes("planner")) {
+    return `Plan packet: turns "${focus}" into a sequence centred on ${work}. Next cue: ${handoff}`;
+  }
+
+  if (roleSignature.includes("research")) {
+    return `Research packet: gathers evidence, examples, and background notes for "${focus}". Working focus: ${work}`;
+  }
+
+  if (roleSignature.includes("source")) {
+    return `Checked-source packet: filters "${focus}" down to the strongest references and flags weak claims. Forward cue: ${handoff}`;
+  }
+
+  if (roleSignature.includes("writer")) {
+    return `Draft packet: shapes "${focus}" into readable prose with emphasis on ${work}. Ready for ${handoff}`;
+  }
+
+  if (roleSignature.includes("review")) {
+    return `Review packet: critiques "${focus}" for clarity and gaps, then proposes fixes before ${handoff}`;
+  }
+
+  if (roleSignature.includes("quiz")) {
+    return `Practice packet: converts "${focus}" into short retrieval questions and answer checks. Working focus: ${work}`;
+  }
+
+  if (roleSignature.includes("slide")) {
+    return `Presentation packet: maps "${focus}" into slide beats, visual anchors, and speaking cues for ${work}`;
+  }
+
+  return `${agent.name} packet: uses ${summarizePacketText(agent.inputs, 54)} to work on ${work} and returns ${summarizePacketText(agent.outputs, 54)}. Workflow goal: ${summarizePacketText(workflow.outcome, 64)}`;
+}
+
+function mergeMockPackets(branches: SimulationBranch[], nextGroup: TimeGroup | undefined, workflow: WorkflowRecord): string {
+  if (branches.length === 0) {
+    return summarizePacketText(workflow.outcome, 120);
+  }
+
+  if (branches.length === 1) {
+    const branch = branches[0];
+    return nextGroup
+      ? `${branch.agent.name} hands forward a packet for T${nextGroup.time}: ${branch.outputPacket}`
+      : `Final packet: ${workflow.outcome}. It is assembled from ${branch.agent.name}'s mock output.`;
+  }
+
+  const names = branches.map((branch) => branch.agent.name).join(", ");
+  const sharedHandoff = summarizePacketText(branches.map((branch) => branch.step.handoff).join(" "), 120);
+
+  return nextGroup
+    ? `Merged packet for T${nextGroup.time}: combines the parallel outputs from ${names}. Shared handoff: ${sharedHandoff}`
+    : `Final packet: combines the parallel outputs from ${names} into ${workflow.outcome}.`;
+}
+
+function buildWorkflowSimulation(workflow: WorkflowRecord, agents: AgentRecord[], seedInput: string): SimulationGroup[] {
+  const groups = groupTimeSteps(workflow.timeSteps);
+  let incomingPacket = normalizeSimulationSeed(seedInput, workflow);
+
+  return groups.map((group, index) => {
+    const branches = group.steps.map((step) => {
+      const agent = resolveAgentRecord(agents, step.agentId);
+      return {
+        agent,
+        step,
+        outputPacket: createMockPacket(agent, step, incomingPacket, workflow),
+      };
+    });
+    const outgoingPacket = mergeMockPackets(branches, groups[index + 1], workflow);
+    const result = {
+      time: group.time,
+      incomingPacket,
+      branches,
+      outgoingPacket,
+    };
+    incomingPacket = outgoingPacket;
+    return result;
+  });
+}
+
 export function renderHomePage(routes: RouteSummary[]): string {
   const routeList = routes
     .map(
@@ -280,6 +405,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
   const starterWorkflowCards = starterState.workflows.map((workflow) => renderWorkflowPreview(workflow, starterState.agents)).join("");
   const starterWorkflow = starterState.workflows[0];
   const initialStage = learningStages[0];
+  const starterSimulationSeed = starterWorkflow ? buildDefaultSimulationSeed(starterWorkflow) : "";
 
   return `<!doctype html>
 <html lang="en">
@@ -518,8 +644,8 @@ export function renderHomePage(routes: RouteSummary[]): string {
       </section>
 
       <section data-stage-panel="inspect-flow" hidden>
-        <div class="grid gap-6 xl:grid-cols-[minmax(18rem,0.31fr)_minmax(0,1fr)] xl:items-start">
-          <aside class="grid gap-6 xl:sticky xl:top-6 xl:self-start">
+        <div class="grid gap-6">
+          <div class="grid gap-6 xl:grid-cols-[minmax(22rem,0.4fr)_minmax(0,1fr)] xl:items-start">
             <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
               <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow playback</p>
@@ -533,46 +659,57 @@ export function renderHomePage(routes: RouteSummary[]): string {
                     ${renderPlaybackWorkflowOptions(starterState.workflows)}
                   </select>
                 </label>
-                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div class="grid gap-3 sm:grid-cols-3">
                   <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-prev" type="button">Previous slot</button>
                   <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next slot</button>
-                  <button class="rounded-full bg-app-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-app-accent-strong sm:col-span-2 xl:col-span-1" id="playback-auto" type="button">Play animation</button>
+                  <button class="rounded-full bg-app-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-app-accent-strong" id="playback-auto" type="button">Play animation</button>
                 </div>
-                <div class="rounded-[1rem] border border-app-line/70 bg-white px-4 py-3">
-                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Active slot</p>
-                  <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
+                <div class="grid gap-4 lg:grid-cols-[minmax(14rem,0.38fr)_minmax(0,1fr)]">
+                  <div class="rounded-[1rem] border border-app-line/70 bg-white px-4 py-3">
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Active slot</p>
+                    <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
+                  </div>
+                  <div class="rounded-[1rem] border border-app-line/70 bg-app-ink p-4 text-sm leading-7 text-app-ink-contrast">
+                    Click any graph node to jump to its slot. The graph and the card playback stay synchronized on the same workflow state.
+                  </div>
                 </div>
-                <div class="rounded-[1rem] border border-app-line/70 bg-app-ink p-4 text-sm leading-7 text-app-ink-contrast">
-                  Click any graph node to jump to its slot. The graph and the card playback stay synchronized on the same workflow state.
+                <label class="grid gap-2 text-sm font-semibold text-app-text" for="simulation-seed">
+                  Seed packet
+                  <textarea class="min-h-28 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="simulation-seed" placeholder="Describe the student request or starting packet for this workflow.">${escapeHtml(starterSimulationSeed)}</textarea>
+                </label>
+                <div class="flex flex-wrap items-center gap-3">
+                  <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="simulation-reset" type="button">Load workflow seed</button>
+                  <p class="text-xs leading-6 text-app-text-soft">Deterministic mock data only. No real model call leaves the browser.</p>
                 </div>
               </div>
             </section>
-            <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
-          </aside>
-          <div class="grid gap-6">
             <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
               <div id="workflow-graph-stage">${starterWorkflow ? renderWorkflowGraph(starterWorkflow, starterState.agents, 0) : renderEmptyWorkflowGraph()}</div>
             </section>
-            <div class="grid gap-6 2xl:grid-cols-[minmax(0,0.96fr)_minmax(20rem,0.74fr)]">
-              <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-                <div class="flex items-end justify-between gap-4">
-                  <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace state</p>
-                    <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Inspect the JSON</h2>
-                  </div>
-                  <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
+          </div>
+          <div class="grid gap-6 2xl:grid-cols-2">
+            <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
+            <div id="simulation-stage">${starterWorkflow ? renderSimulationStage(starterWorkflow, starterState.agents, 0, starterSimulationSeed) : renderEmptySimulationStage()}</div>
+          </div>
+          <div class="grid gap-6 2xl:grid-cols-[minmax(0,0.96fr)_minmax(20rem,0.74fr)]">
+            <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+              <div class="flex items-end justify-between gap-4">
+                <div>
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace state</p>
+                  <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Inspect the JSON</h2>
                 </div>
-                <p class="mt-3 text-sm leading-7 text-app-text-soft">The app keeps the entire studio in <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">localStorage</code> under the key <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">${escapeHtml(storageKey)}</code>.</p>
-                <label class="sr-only" for="workspace-json">Workspace JSON</label>
-                <textarea class="mt-4 h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
-                  JSON.stringify(starterState, null, 2),
-                )}</textarea>
-              </section>
-              <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Available routes</p>
-                <ul class="mt-4 grid gap-3">${routeList}</ul>
-              </section>
-            </div>
+                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
+              </div>
+              <p class="mt-3 text-sm leading-7 text-app-text-soft">The app keeps the entire studio in <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">localStorage</code> under the key <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">${escapeHtml(storageKey)}</code>.</p>
+              <label class="sr-only" for="workspace-json">Workspace JSON</label>
+              <textarea class="mt-4 h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
+                JSON.stringify(starterState, null, 2),
+              )}</textarea>
+            </section>
+            <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Available routes</p>
+              <ul class="mt-4 grid gap-3">${routeList}</ul>
+            </section>
           </div>
         </div>
       </section>
@@ -726,6 +863,62 @@ export function renderPlaybackStage(workflow: WorkflowRecord, agents: AgentRecor
 
 export function renderEmptyPlaybackStage(): string {
   return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the handoff playback.</div>';
+}
+
+export function renderSimulationStage(workflow: WorkflowRecord, agents: AgentRecord[], groupIndex: number, seedInput: string): string {
+  const groups = buildWorkflowSimulation(workflow, agents, seedInput);
+  const currentGroup = groups[groupIndex];
+  if (!currentGroup) {
+    return renderEmptySimulationStage();
+  }
+
+  const nextGroup = groups[groupIndex + 1];
+  const branchCards = currentGroup.branches
+    .map(
+      (branch) => `<article class="rounded-[0.9rem] border border-app-line/70 bg-white p-4">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${escapeHtml(branch.agent.name)}</p>
+            <p class="mt-2 text-sm leading-6 text-app-text-soft">${escapeHtml(branch.step.work)}</p>
+          </div>
+          <span class="rounded-full bg-app-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-app-accent-strong">Mock transform</span>
+        </div>
+        <div class="mt-4 rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 px-4 py-3 text-sm leading-6 text-app-text-soft">
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Produces</p>
+          <p class="mt-2">${escapeHtml(branch.outputPacket)}</p>
+          <p class="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff</p>
+          <p class="mt-2">${escapeHtml(branch.step.handoff)}</p>
+        </div>
+      </article>`,
+    )
+    .join("");
+
+  return `<div class="grid gap-4">
+    <article class="rounded-[1rem] border border-app-line/75 bg-white p-5">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Mock execution at T${currentGroup.time}</p>
+          <h3 class="mt-2 text-2xl font-semibold tracking-[-0.03em] text-app-text">Push a packet through the current slot</h3>
+        </div>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">${currentGroup.branches.length > 1 ? `${currentGroup.branches.length} mocked branches running in parallel` : "Single mocked branch"}</p>
+      </div>
+      <div class="mt-4 rounded-[0.9rem] border border-app-line/70 bg-app-canvas/70 px-4 py-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Packet arriving at T${currentGroup.time}</p>
+        <p class="mt-2 text-sm leading-7 text-app-text-soft">${escapeHtml(currentGroup.incomingPacket)}</p>
+      </div>
+      <div class="mt-4 grid gap-3 md:grid-cols-2">${branchCards}</div>
+    </article>
+    <article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast">
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${nextGroup ? `Packet leaving for T${nextGroup.time}` : "Final mock output"}</p>
+      <p class="mt-3 text-sm leading-7">${escapeHtml(currentGroup.outgoingPacket)}</p>
+      <p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this helps</p>
+      <p class="mt-2 text-sm leading-7">${nextGroup ? "Students can compare what entered the slot, what each agent changed, and what the next slot receives." : "Students can compare the final mock packet with the workflow outcome and see how the earlier handoffs shaped it."}</p>
+    </article>
+  </div>`;
+}
+
+export function renderEmptySimulationStage(): string {
+  return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to inspect deterministic mock packets.</div>';
 }
 
 export function renderWorkflowGraph(workflow: WorkflowRecord, agents: AgentRecord[], groupIndex: number): string {
@@ -921,6 +1114,7 @@ function createClientScript(): string {
   let editingTimeStepId = "";
   let activeStage = learningStages[0]?.id || "explore";
   const playback = { workflowId: "", groupIndex: 0, isAutoPlaying: false, timerId: 0 };
+  const simulation = { workflowId: "", seedInput: "" };
 
   const refs = {
     agentCount: document.getElementById("agent-count"),
@@ -961,6 +1155,9 @@ function createClientScript(): string {
     playbackAuto: document.getElementById("playback-auto"),
     playbackStepCounter: document.getElementById("playback-step-counter"),
     playbackStage: document.getElementById("playback-stage"),
+    simulationSeed: document.getElementById("simulation-seed"),
+    simulationReset: document.getElementById("simulation-reset"),
+    simulationStage: document.getElementById("simulation-stage"),
     workflowGraphStage: document.getElementById("workflow-graph-stage"),
     agentSubmit: document.getElementById("agent-submit"),
     workflowSubmit: document.getElementById("workflow-submit"),
@@ -1016,6 +1213,27 @@ function createClientScript(): string {
         refs.copyJson.textContent = "Copy JSON";
       }, 1500);
     }
+  });
+
+  refs.simulationSeed?.addEventListener("input", () => {
+    if (!(refs.simulationSeed instanceof HTMLTextAreaElement)) {
+      return;
+    }
+
+    simulation.seedInput = refs.simulationSeed.value;
+    renderSimulation();
+  });
+
+  refs.simulationReset?.addEventListener("click", () => {
+    const workflow = state.workflows.find((record) => record.id === playback.workflowId) || state.workflows[0];
+    if (!workflow || !(refs.simulationSeed instanceof HTMLTextAreaElement)) {
+      return;
+    }
+
+    simulation.workflowId = workflow.id;
+    simulation.seedInput = buildDefaultSimulationSeed(workflow);
+    refs.simulationSeed.value = simulation.seedInput;
+    renderSimulation();
   });
 
   document.addEventListener("click", (event) => {
@@ -1370,6 +1588,8 @@ function createClientScript(): string {
     editingTimeStepId = "";
     playback.workflowId = "";
     playback.groupIndex = 0;
+    simulation.workflowId = "";
+    simulation.seedInput = "";
   }
 
   function render() {
@@ -1534,6 +1754,7 @@ function createClientScript(): string {
     if (
       !(refs.playbackWorkflow instanceof HTMLSelectElement) ||
       !(refs.playbackStage instanceof HTMLElement) ||
+      !(refs.simulationStage instanceof HTMLElement) ||
       !(refs.workflowGraphStage instanceof HTMLElement) ||
       !(refs.playbackStepCounter instanceof HTMLElement) ||
       !(refs.playbackPrev instanceof HTMLButtonElement) ||
@@ -1552,7 +1773,15 @@ function createClientScript(): string {
       refs.playbackNext.disabled = true;
       refs.playbackAuto.disabled = true;
       refs.playbackAuto.textContent = "Play animation";
+      if (refs.simulationSeed instanceof HTMLTextAreaElement) {
+        refs.simulationSeed.disabled = true;
+        refs.simulationSeed.value = "";
+      }
+      if (refs.simulationReset instanceof HTMLButtonElement) {
+        refs.simulationReset.disabled = true;
+      }
       refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the handoff playback.</div>';
+      refs.simulationStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to inspect deterministic mock packets.</div>';
       refs.workflowGraphStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the experimental DAG graph.</div>';
       return;
     }
@@ -1567,6 +1796,21 @@ function createClientScript(): string {
     playback.workflowId = activeWorkflow.id;
     refs.playbackWorkflow.value = activeWorkflow.id;
     playback.groupIndex = Math.min(playback.groupIndex, Math.max(groups.length - 1, 0));
+    if (refs.simulationSeed instanceof HTMLTextAreaElement) {
+      refs.simulationSeed.disabled = false;
+    }
+    if (refs.simulationReset instanceof HTMLButtonElement) {
+      refs.simulationReset.disabled = false;
+    }
+    if (simulation.workflowId !== activeWorkflow.id) {
+      simulation.workflowId = activeWorkflow.id;
+      simulation.seedInput = buildDefaultSimulationSeed(activeWorkflow);
+      if (refs.simulationSeed instanceof HTMLTextAreaElement) {
+        refs.simulationSeed.value = simulation.seedInput;
+      }
+    } else if (refs.simulationSeed instanceof HTMLTextAreaElement) {
+      simulation.seedInput = refs.simulationSeed.value;
+    }
 
     const group = groups[playback.groupIndex];
     if (!group) {
@@ -1577,6 +1821,7 @@ function createClientScript(): string {
       refs.playbackAuto.disabled = true;
       refs.playbackAuto.textContent = "Play animation";
       refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add an action to the selected workflow to see its handoff.</div>';
+      refs.simulationStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add an action to the selected workflow to inspect deterministic mock packets.</div>';
       refs.workflowGraphStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add an action to the selected workflow to see the experimental DAG graph.</div>';
       return;
     }
@@ -1599,7 +1844,22 @@ function createClientScript(): string {
     refs.playbackAuto.disabled = groups.length <= 1;
     refs.playbackAuto.textContent = playback.isAutoPlaying ? "Pause animation" : "Play animation";
     refs.playbackStage.innerHTML = '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Active at T' + group.time + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (group.steps.length > 1 ? group.steps.length + ' agents are working in parallel at this time.' : 'One agent is active in this slot.') + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + activeCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p><div class="mt-4 grid gap-3">' + handoffCards + '</div><p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Next slot: T' + nextGroup.time : 'Workflow outcome') + '</p><p class="mt-2 text-lg font-semibold tracking-[-0.02em]">' + (nextGroup ? nextGroup.steps.length + ' agent' + (nextGroup.steps.length === 1 ? '' : 's') + ' continue at T' + nextGroup.time : escapeHtml(activeWorkflow.outcome)) + '</p></article></div>';
+    refs.simulationStage.innerHTML = renderSimulationStage(activeWorkflow, playback.groupIndex, simulation.seedInput);
     refs.workflowGraphStage.innerHTML = renderWorkflowGraphStage(activeWorkflow, playback.groupIndex);
+  }
+
+  function renderSimulation() {
+    if (!(refs.simulationStage instanceof HTMLElement)) {
+      return;
+    }
+
+    const workflow = state.workflows.find((record) => record.id === playback.workflowId) || state.workflows[0];
+    if (!workflow) {
+      refs.simulationStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to inspect deterministic mock packets.</div>';
+      return;
+    }
+
+    refs.simulationStage.innerHTML = renderSimulationStage(workflow, playback.groupIndex, simulation.seedInput);
   }
 
   function renderWorkflowGraphStage(workflow, groupIndex) {
@@ -1638,6 +1898,111 @@ function createClientScript(): string {
       .join("");
 
     return '<div class="grid gap-4"><div class="rounded-[1.25rem] border border-app-line/80 bg-white/80 p-4"><div class="flex flex-wrap items-center justify-between gap-3"><p class="text-sm font-semibold text-app-text">Graph view for ' + escapeHtml(workflow.name) + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (activeGroup.steps.length > 1 ? activeGroup.steps.length + " active branches at T" + activeGroup.time : "Single active branch at T" + activeGroup.time) + '</p></div><div class="mt-4 overflow-x-auto pb-2"><div class="relative" style="height:' + layout.height + "px;width:" + layout.width + 'px"><svg aria-hidden="true" class="absolute inset-0 h-full w-full" viewBox="0 0 ' + layout.width + " " + layout.height + '">' + columnGuides + edges + "</svg>" + nodes + '</div></div></div><div class="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"><article class="rounded-[1rem] border border-app-line/75 bg-white p-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Active data packet</p><p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">' + (nextGroup ? "Packets leave T" + activeGroup.time + " and head to T" + nextGroup.time : "T" + activeGroup.time + " delivers the final result") + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + activeGroup.steps.map((step) => escapeHtml(step.handoff)).join(" ") + '</p></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-4 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this spike matters</p><p class="mt-2 text-sm leading-7">' + (nextGroup ? "The DAG makes dependencies visible: every active branch at T" + activeGroup.time + " feeds the next slot at T" + nextGroup.time + "." : escapeHtml(workflow.outcome)) + "</p></article></div></div>";
+  }
+
+  function renderSimulationStage(workflow, groupIndex, seedInput) {
+    const groups = buildWorkflowSimulation(workflow, seedInput);
+    const currentGroup = groups[groupIndex];
+    if (!currentGroup) {
+      return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to inspect deterministic mock packets.</div>';
+    }
+
+    const nextGroup = groups[groupIndex + 1];
+    const branchCards = currentGroup.branches
+      .map((branch) => '<article class="rounded-[0.9rem] border border-app-line/70 bg-white p-4"><div class="flex items-start justify-between gap-3"><div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + escapeHtml(branch.agent.name) + '</p><p class="mt-2 text-sm leading-6 text-app-text-soft">' + escapeHtml(branch.step.work) + '</p></div><span class="rounded-full bg-app-accent/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-app-accent-strong">Mock transform</span></div><div class="mt-4 rounded-[0.9rem] border border-app-line/70 bg-app-sand/45 px-4 py-3 text-sm leading-6 text-app-text-soft"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Produces</p><p class="mt-2">' + escapeHtml(branch.outputPacket) + '</p><p class="mt-3 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff</p><p class="mt-2">' + escapeHtml(branch.step.handoff) + "</p></div></article>")
+      .join("");
+
+    return '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Mock execution at T' + currentGroup.time + '</p><h3 class="mt-2 text-2xl font-semibold tracking-[-0.03em] text-app-text">Push a packet through the current slot</h3></div><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">' + (currentGroup.branches.length > 1 ? currentGroup.branches.length + ' mocked branches running in parallel' : 'Single mocked branch') + '</p></div><div class="mt-4 rounded-[0.9rem] border border-app-line/70 bg-app-canvas/70 px-4 py-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Packet arriving at T' + currentGroup.time + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + escapeHtml(currentGroup.incomingPacket) + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + branchCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Packet leaving for T' + nextGroup.time : 'Final mock output') + '</p><p class="mt-3 text-sm leading-7">' + escapeHtml(currentGroup.outgoingPacket) + '</p><p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this helps</p><p class="mt-2 text-sm leading-7">' + (nextGroup ? 'Students can compare what entered the slot, what each agent changed, and what the next slot receives.' : 'Students can compare the final mock packet with the workflow outcome and see how the earlier handoffs shaped it.') + '</p></article></div>';
+  }
+
+  function buildWorkflowSimulation(workflow, seedInput) {
+    const groups = groupTimeSteps(workflow.timeSteps);
+    let incomingPacket = normalizeSimulationSeed(seedInput, workflow);
+
+    return groups.map((group, index) => {
+      const branches = group.steps.map((step) => {
+        const agent = resolveAgent(step.agentId);
+        return {
+          agent,
+          step,
+          outputPacket: createMockPacket(agent, step, incomingPacket, workflow),
+        };
+      });
+      const outgoingPacket = mergeMockPackets(branches, groups[index + 1], workflow);
+      const result = { time: group.time, incomingPacket, branches, outgoingPacket };
+      incomingPacket = outgoingPacket;
+      return result;
+    });
+  }
+
+  function buildDefaultSimulationSeed(workflow) {
+    return "Student request: " + workflow.name + ".\\nTarget outcome: " + workflow.outcome + "\\nNeed a clear packet that can move through each handoff.";
+  }
+
+  function normalizeSimulationSeed(seedInput, workflow) {
+    const trimmed = typeof seedInput === "string" ? seedInput.trim() : "";
+    return trimmed || buildDefaultSimulationSeed(workflow);
+  }
+
+  function summarizePacketText(text, maxLength) {
+    const compact = String(text || "").replace(/\\s+/g, " ").trim();
+    if (compact.length <= maxLength) {
+      return compact;
+    }
+
+    return compact.slice(0, Math.max(maxLength - 1, 1)).trimEnd() + "…";
+  }
+
+  function createMockPacket(agent, step, incomingPacket, workflow) {
+    const roleSignature = (agent.name + " " + agent.responsibility + " " + agent.outputs).toLowerCase();
+    const focus = summarizePacketText(incomingPacket, 84);
+    const work = summarizePacketText(step.work, 88);
+    const handoff = summarizePacketText(step.handoff, 84);
+
+    if (roleSignature.includes("planner")) {
+      return 'Plan packet: turns "' + focus + '" into a sequence centred on ' + work + ". Next cue: " + handoff;
+    }
+
+    if (roleSignature.includes("research")) {
+      return 'Research packet: gathers evidence, examples, and background notes for "' + focus + '". Working focus: ' + work;
+    }
+
+    if (roleSignature.includes("source")) {
+      return 'Checked-source packet: filters "' + focus + '" down to the strongest references and flags weak claims. Forward cue: ' + handoff;
+    }
+
+    if (roleSignature.includes("writer")) {
+      return 'Draft packet: shapes "' + focus + '" into readable prose with emphasis on ' + work + ". Ready for " + handoff;
+    }
+
+    if (roleSignature.includes("review")) {
+      return 'Review packet: critiques "' + focus + '" for clarity and gaps, then proposes fixes before ' + handoff;
+    }
+
+    if (roleSignature.includes("quiz")) {
+      return 'Practice packet: converts "' + focus + '" into short retrieval questions and answer checks. Working focus: ' + work;
+    }
+
+    if (roleSignature.includes("slide")) {
+      return 'Presentation packet: maps "' + focus + '" into slide beats, visual anchors, and speaking cues for ' + work;
+    }
+
+    return agent.name + " packet: uses " + summarizePacketText(agent.inputs, 54) + " to work on " + work + " and returns " + summarizePacketText(agent.outputs, 54) + ". Workflow goal: " + summarizePacketText(workflow.outcome, 64);
+  }
+
+  function mergeMockPackets(branches, nextGroup, workflow) {
+    if (branches.length === 0) {
+      return summarizePacketText(workflow.outcome, 120);
+    }
+
+    if (branches.length === 1) {
+      const branch = branches[0];
+      return nextGroup ? branch.agent.name + " hands forward a packet for T" + nextGroup.time + ": " + branch.outputPacket : "Final packet: " + workflow.outcome + ". It is assembled from " + branch.agent.name + "'s mock output.";
+    }
+
+    const names = branches.map((branch) => branch.agent.name).join(", ");
+    const sharedHandoff = summarizePacketText(branches.map((branch) => branch.step.handoff).join(" "), 120);
+    return nextGroup ? "Merged packet for T" + nextGroup.time + ": combines the parallel outputs from " + names + ". Shared handoff: " + sharedHandoff : "Final packet: combines the parallel outputs from " + names + " into " + workflow.outcome + ".";
   }
 
   function createWorkflowGraphLayout(groups) {
@@ -1898,6 +2263,16 @@ function createClientScript(): string {
 
   function resolveAgentName(agentId) {
     return state.agents.find((agent) => agent.id === agentId)?.name || "Missing agent";
+  }
+
+  function resolveAgent(agentId) {
+    return state.agents.find((agent) => agent.id === agentId) || {
+      id: agentId,
+      name: "Missing agent",
+      responsibility: "No saved definition is available for this agent.",
+      inputs: "Unknown",
+      outputs: "Unknown",
+    };
   }
 
   function escapeHtml(value) {

@@ -13,7 +13,7 @@ The primary users are smart beginners with little or no programming experience. 
 - **Entry points:** `GET /` renders the studio UI from [`src/views/home.ts`](../../src/views/home.ts). `GET /api/health` remains available for smoke tests and tooling.
 - **Data models:** The browser stores a workspace in `localStorage` under the key `agent-workflow-studio/v1`. The workspace contains `agents[]` and `workflows[]`. Each workflow stores `agentIds[]` plus ordered `timeSteps[]`. Each time step names a numeric `time` slot, the acting `agentId`, the work happening at that moment, and the handoff that moves the workflow forward. Multiple time steps can share the same `time` value to represent parallel execution.
 - **Interaction model:** The studio stays on a single route but is split into staged views: `Explore`, `Define Agents`, `Build Workflow`, and `Inspect Flow`. Each stage reveals one part of the learning path while reusing the same in-browser workspace state, and wider viewports should prefer side-by-side panels over tall stacked sections so the graph, forms, and saved examples fit the screen better.
-- **Visualization model:** The studio keeps the card-based playback view and also exposes an experimental DAG spike that maps each time slot to a graph column, each agent action to a node, and each handoff to an animated edge toward the next slot. Graph nodes may condense long work text to fit the slot while preserving the full task text through accessible hover or focus context and the synced playback view.
+- **Visualization model:** The studio keeps the card-based playback view and also exposes an experimental DAG spike that maps each time slot to a graph column, each agent action to a node, and each handoff to an animated edge toward the next slot. The inspect stage also includes a deterministic local simulation layer that pushes a mock packet through the same time-slot graph so students can compare incoming packets, per-agent transforms, and merged outgoing packets without calling a real model.
 - **Dependencies:** The page depends on the generated Tailwind stylesheet served from `/styles.css` and on inline client-side JavaScript embedded in the home page. The DAG spike uses inline SVG and browser animation primitives rather than a graph library. No backend persistence is required for the studio.
 
 ### Anti-Patterns
@@ -25,6 +25,7 @@ The primary users are smart beginners with little or no programming experience. 
 - Do not turn the experience into a code-first editor. Students should be able to learn the concepts through plain-language fields and visible state.
 - Do not force beginners to parse every concept at once. The surface should progressively reveal the learning path instead of collapsing all stages into one crowded workspace.
 - Do not introduce a heavy graph dependency for the spike. The experiment should stay lightweight enough to prune or replace once the team decides whether the DAG view is worth keeping.
+- Do not present the simulation as a live model call. The mock execution must stay clearly labeled as deterministic teaching data.
 - Do not store secrets, tokens, or any sensitive data in the browser workspace.
 
 ## Contract
@@ -37,6 +38,7 @@ The primary users are smart beginners with little or no programming experience. 
 - [ ] Students can create ordered time-slot actions that assign work and handoffs to specific agents.
 - [ ] The UI visualizes how work passes from one agent to the next across time slots.
 - [ ] The app includes an experimental DAG visualization that reuses the same workflow data and can animate the current handoff path.
+- [ ] The inspect stage includes a deterministic mock execution view that shows a seed packet, per-agent transformed packets, and the merged outgoing packet for the current slot.
 - [ ] The app ships with example workflows that show both sequential and parallel execution patterns.
 - [ ] The workspace survives page reloads through `localStorage`.
 - [ ] The UI exposes the current workspace state so students can inspect what the app saved.
@@ -47,11 +49,12 @@ The primary users are smart beginners with little or no programming experience. 
 
 - The home page must remain usable without any backend writes or external account setup.
 - Stage navigation must not create a second source of truth for workspace state.
-- Wider layouts must keep primary learning controls and their corresponding content visible in the same horizontal workspace rather than pushing key panels far below the fold.
+- Wider layouts must keep primary learning controls and their corresponding content visible in the same horizontal workspace rather than pushing key panels far below the fold. In the inspect stage, the graph, playback, and simulation should share that width instead of collapsing into a narrow stacked sidebar.
 - Workflow definitions must keep agent associations explicit in the stored state.
 - Time-slot order and handoff text must remain explicit in the stored state and visible in the UI.
 - Parallel actions must remain grouped by shared time slot in the visualization.
 - The DAG spike must stay derived from the same stored workflow data as the editor and playback view.
+- The mock execution layer must remain local, deterministic, and derived from the saved workflow definition rather than adding hidden backend or model dependencies.
 - The health endpoint contract must remain stable for local verification and smoke tests.
 
 ### Verification
@@ -102,6 +105,12 @@ The primary users are smart beginners with little or no programming experience. 
 - Given: The studio has a workflow with at least two time slots
 - When: The student opens the DAG spike and clicks a node or plays the animation
 - Then: The active time slot stays synchronized with playback and the graph shows animated packet flow toward the next dependency
+
+**Scenario: Student pushes a mock packet through the workflow**
+
+- Given: The studio has a workflow with at least one time slot
+- When: The student enters a seed packet in the inspect stage
+- Then: The app shows the incoming packet for the active slot, the mocked per-agent transforms, and the packet that leaves for the next slot or final outcome
 
 **Scenario: Workspace state survives reload**
 
