@@ -661,7 +661,7 @@ export function renderWorkflowGraph(workflow: WorkflowRecord, agents: AgentRecor
             </path>
             ${
               isActive
-                ? `<circle cx="${sourceNode.x + layout.nodeWidth}" cy="${sourceNode.y + layout.nodeHeight / 2}" fill="#7fb2ff" r="5">
+                ? `<circle cx="0" cy="0" fill="#7fb2ff" r="5">
                     <animateMotion dur="1.9s" path="${path}" repeatCount="indefinite"></animateMotion>
                   </circle>`
                 : ""
@@ -681,10 +681,10 @@ export function renderWorkflowGraph(workflow: WorkflowRecord, agents: AgentRecor
             ? "border-app-line/70 bg-white/90"
             : "border-app-line/70 bg-white/75";
       const stateLabel = node.groupIndex === groupIndex ? "Active packet" : node.groupIndex < groupIndex ? "Earlier slot" : "Upcoming slot";
-      return `<button aria-label="Focus T${node.time}: ${escapeHtml(resolveAgentName(agents, node.step.agentId))}" aria-pressed="${node.groupIndex === groupIndex}" class="absolute rounded-[1rem] border p-4 text-left transition hover:-translate-y-0.5 hover:border-app-accent/35 ${stateClass}" data-graph-group-index="${node.groupIndex}" style="height:${layout.nodeHeight}px;left:${node.x}px;top:${node.y}px;width:${layout.nodeWidth}px" type="button">
+      return `<button aria-label="Focus T${node.time}: ${escapeHtml(resolveAgentName(agents, node.step.agentId))}" aria-pressed="${node.groupIndex === groupIndex}" class="absolute flex flex-col overflow-hidden rounded-[1rem] border p-4 text-left transition hover:-translate-y-0.5 hover:border-app-accent/35 ${stateClass}" data-graph-group-index="${node.groupIndex}" style="height:${layout.nodeHeight}px;left:${node.x}px;top:${node.y}px;width:${layout.nodeWidth}px" title="${escapeHtml(node.step.work)}" type="button">
         <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-app-rust">T${node.time} · ${stateLabel}</p>
-        <p class="mt-2 text-sm font-semibold text-app-text">${escapeHtml(resolveAgentName(agents, node.step.agentId))}</p>
-        <p class="mt-2 text-sm leading-6 text-app-text-soft">${escapeHtml(node.step.work)}</p>
+        <p class="mt-2 text-sm leading-5 font-semibold text-app-text">${escapeHtml(resolveAgentName(agents, node.step.agentId))}</p>
+        <p class="mt-2 overflow-hidden text-[13px] leading-5 text-app-text-soft" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;">${escapeHtml(node.step.work)}</p>
       </button>`;
     })
     .join("");
@@ -761,7 +761,7 @@ function sortTimeSteps(timeSteps: TimeStepRecord[]): TimeStepRecord[] {
 
 function createWorkflowGraphLayout(groups: TimeGroup[]) {
   const nodeWidth = 190;
-  const nodeHeight = 132;
+  const nodeHeight = 148;
   const columnGap = 234;
   const rowGap = 28;
   const paddingX = 28;
@@ -1458,7 +1458,7 @@ function createClientScript(): string {
             const path = buildGraphEdgePath(sourceNode, targetNode, layout.nodeWidth);
             const isActive = currentIndex === groupIndex;
             const stroke = isActive ? "#2f6fed" : "rgb(22 32 51 / 0.14)";
-            return '<g><path d="' + path + '" fill="none" stroke="' + stroke + '" stroke-dasharray="' + (isActive ? "8 10" : "0") + '" stroke-linecap="round" stroke-width="' + (isActive ? 3 : 2) + '">' + (isActive ? '<animate attributeName="stroke-dashoffset" from="18" to="0" dur="0.9s" repeatCount="indefinite"></animate>' : "") + '<title>' + escapeHtml(sourceNode.step.handoff) + '</title></path>' + (isActive ? '<circle cx="' + (sourceNode.x + layout.nodeWidth) + '" cy="' + (sourceNode.y + layout.nodeHeight / 2) + '" fill="#7fb2ff" r="5"><animateMotion dur="1.9s" path="' + path + '" repeatCount="indefinite"></animateMotion></circle>' : "") + "</g>";
+            return '<g><path d="' + path + '" fill="none" stroke="' + stroke + '" stroke-dasharray="' + (isActive ? "8 10" : "0") + '" stroke-linecap="round" stroke-width="' + (isActive ? 3 : 2) + '">' + (isActive ? '<animate attributeName="stroke-dashoffset" from="18" to="0" dur="0.9s" repeatCount="indefinite"></animate>' : "") + '<title>' + escapeHtml(sourceNode.step.handoff) + '</title></path>' + (isActive ? '<circle cx="0" cy="0" fill="#7fb2ff" r="5"><animateMotion dur="1.9s" path="' + path + '" repeatCount="indefinite"></animateMotion></circle>' : "") + "</g>";
           }),
         );
       })
@@ -1467,7 +1467,7 @@ function createClientScript(): string {
       .map((node) => {
         const stateClass = node.groupIndex === groupIndex ? "border-app-accent/40 bg-app-sand shadow-panel ring-2 ring-app-accent/20" : node.groupIndex < groupIndex ? "border-app-line/70 bg-white/90" : "border-app-line/70 bg-white/75";
         const stateLabel = node.groupIndex === groupIndex ? "Active packet" : node.groupIndex < groupIndex ? "Earlier slot" : "Upcoming slot";
-        return '<button aria-label="Focus T' + node.time + ": " + escapeHtml(resolveAgentName(node.step.agentId)) + '" aria-pressed="' + (node.groupIndex === groupIndex) + '" class="absolute rounded-[1rem] border p-4 text-left transition hover:-translate-y-0.5 hover:border-app-accent/35 ' + stateClass + '" data-graph-group-index="' + node.groupIndex + '" style="height:' + layout.nodeHeight + "px;left:" + node.x + "px;top:" + node.y + "px;width:" + layout.nodeWidth + 'px" type="button"><p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-app-rust">T' + node.time + " · " + stateLabel + '</p><p class="mt-2 text-sm font-semibold text-app-text">' + escapeHtml(resolveAgentName(node.step.agentId)) + '</p><p class="mt-2 text-sm leading-6 text-app-text-soft">' + escapeHtml(node.step.work) + "</p></button>";
+        return '<button aria-label="Focus T' + node.time + ": " + escapeHtml(resolveAgentName(node.step.agentId)) + '" aria-pressed="' + (node.groupIndex === groupIndex) + '" class="absolute flex flex-col overflow-hidden rounded-[1rem] border p-4 text-left transition hover:-translate-y-0.5 hover:border-app-accent/35 ' + stateClass + '" data-graph-group-index="' + node.groupIndex + '" style="height:' + layout.nodeHeight + "px;left:" + node.x + "px;top:" + node.y + "px;width:" + layout.nodeWidth + 'px" title="' + escapeHtml(node.step.work) + '" type="button"><p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-app-rust">T' + node.time + " · " + stateLabel + '</p><p class="mt-2 text-sm leading-5 font-semibold text-app-text">' + escapeHtml(resolveAgentName(node.step.agentId)) + '</p><p class="mt-2 overflow-hidden text-[13px] leading-5 text-app-text-soft" style="display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden;">' + escapeHtml(node.step.work) + "</p></button>";
       })
       .join("");
 
@@ -1476,7 +1476,7 @@ function createClientScript(): string {
 
   function createWorkflowGraphLayout(groups) {
     const nodeWidth = 190;
-    const nodeHeight = 132;
+    const nodeHeight = 148;
     const columnGap = 234;
     const rowGap = 28;
     const paddingX = 28;

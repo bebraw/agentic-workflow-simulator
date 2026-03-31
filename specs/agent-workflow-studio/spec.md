@@ -12,7 +12,7 @@ The primary users are smart beginners with little or no programming experience. 
 
 - **Entry points:** `GET /` renders the studio UI from [`src/views/home.ts`](../../src/views/home.ts). `GET /api/health` remains available for smoke tests and tooling.
 - **Data models:** The browser stores a workspace in `localStorage` under the key `agent-workflow-studio/v1`. The workspace contains `agents[]` and `workflows[]`. Each workflow stores `agentIds[]` plus ordered `timeSteps[]`. Each time step names a numeric `time` slot, the acting `agentId`, the work happening at that moment, and the handoff that moves the workflow forward. Multiple time steps can share the same `time` value to represent parallel execution.
-- **Visualization model:** The studio keeps the card-based playback view and also exposes an experimental DAG spike that maps each time slot to a graph column, each agent action to a node, and each handoff to an animated edge toward the next slot.
+- **Visualization model:** The studio keeps the card-based playback view and also exposes an experimental DAG spike that maps each time slot to a graph column, each agent action to a node, and each handoff to an animated edge toward the next slot. Graph nodes may condense long work text to fit the slot while preserving the full task text through accessible hover or focus context and the synced playback view.
 - **Dependencies:** The page depends on the generated Tailwind stylesheet served from `/styles.css` and on inline client-side JavaScript embedded in the home page. The DAG spike uses inline SVG and browser animation primitives rather than a graph library. No backend persistence is required for the studio.
 
 ### Anti-Patterns

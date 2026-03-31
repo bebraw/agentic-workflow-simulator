@@ -80,6 +80,9 @@ describe("renderHomePage", () => {
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain("Graph view for Parallel pass");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain("T2 delivers the final result");
     expect(renderWorkflowGraph(workflow, agents, 1)).toContain('data-graph-group-index="1"');
+    expect(renderWorkflowGraph(workflow, agents, 1)).toContain('title="Collect supporting notes."');
+    expect(renderWorkflowGraph(workflow, agents, 1)).toContain("-webkit-line-clamp:4");
+    expect(renderWorkflowGraph(workflow, agents, 0)).toContain('<circle cx="0" cy="0" fill="#7fb2ff" r="5">');
     expect(renderPlaybackWorkflowOptions([workflow, { ...workflow, id: "workflow-2", name: "Second workflow" }])).toContain(
       'option value="workflow-1" selected',
     );
