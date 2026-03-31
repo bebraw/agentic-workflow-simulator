@@ -752,10 +752,14 @@ export function renderHomePage(initialStageId?: string | null): string {
                       "The app keeps the entire studio in localStorage under the key agent-workflow-studio/v1. This panel helps students inspect the exact saved state behind the workflow editor and the visualizations.",
                     )}
                   </div>
-                  <button class="mt-4 rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
+                  <p class="mt-4 text-sm leading-6 text-app-text-soft">Edit this JSON and use restore to replace the current browser workspace.</p>
+                  <div class="mt-4 flex flex-wrap gap-2">
+                    <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
+                    <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="restore-json" type="button">Restore JSON</button>
+                  </div>
                 </div>
               <label class="sr-only" for="workspace-json">Workspace JSON</label>
-                <textarea class="h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
+                <textarea class="h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15 xl:h-[28rem]" id="workspace-json" spellcheck="false">${escapeHtml(
                   JSON.stringify(starterState, null, 2),
                 )}</textarea>
               </div>
@@ -1178,16 +1182,18 @@ function createClientScript(): string {
   return `
 (() => {
   const storageKey = ${JSON.stringify(storageKey)};
+  const uiStorageKey = storageKey + "/ui";
   const learningStages = ${serializeJsonForScript(learningStages)};
   const defaultStageId = learningStages[0]?.id || "explore";
   const emptyState = { agents: [], workflows: [] };
   const seedNode = document.getElementById("workspace-seed");
   const seedState = seedNode ? normalizeState(JSON.parse(seedNode.textContent || "{}")) : emptyState;
   const state = loadState();
+  const savedUiState = loadUiState();
   let draftTimeSteps = [];
   let editingTimeStepId = "";
   let activeStage = resolveStageFromUrl();
-  const playback = { workflowId: "", groupIndex: 0, isAutoPlaying: false, timerId: 0 };
+  const playback = { workflowId: savedUiState.workflowId, groupIndex: savedUiState.groupIndex, isAutoPlaying: false, timerId: 0 };
   const simulation = { workflowId: "", seedInput: "" };
 
   const refs = {
@@ -1205,6 +1211,7 @@ function createClientScript(): string {
     loadExample: document.getElementById("load-example"),
     clearWorkspace: document.getElementById("clear-workspace"),
     copyJson: document.getElementById("copy-json"),
+    restoreJson: document.getElementById("restore-json"),
     agentForm: document.getElementById("agent-form"),
     workflowForm: document.getElementById("workflow-form"),
     agentEditingId: document.getElementById("agent-editing-id"),
@@ -1269,7 +1276,7 @@ function createClientScript(): string {
   });
 
   refs.copyJson?.addEventListener("click", async () => {
-    if (!(refs.workspaceJson instanceof HTMLTextAreaElement)) {
+    if (!(refs.workspaceJson instanceof HTMLTextAreaElement) || !(refs.copyJson instanceof HTMLButtonElement)) {
       return;
     }
 
@@ -1283,15 +1290,33 @@ function createClientScript(): string {
         document.execCommand("copy");
       }
 
-      refs.copyJson.textContent = "Copied";
-      window.setTimeout(() => {
-        refs.copyJson.textContent = "Copy JSON";
-      }, 1500);
+      setTemporaryButtonLabel(refs.copyJson, "Copied", "Copy JSON");
     } catch {
-      refs.copyJson.textContent = "Copy failed";
-      window.setTimeout(() => {
-        refs.copyJson.textContent = "Copy JSON";
-      }, 1500);
+      setTemporaryButtonLabel(refs.copyJson, "Copy failed", "Copy JSON");
+    }
+  });
+
+  refs.restoreJson?.addEventListener("click", () => {
+    if (!(refs.workspaceJson instanceof HTMLTextAreaElement) || !(refs.restoreJson instanceof HTMLButtonElement)) {
+      return;
+    }
+
+    const shouldRestore = window.confirm("Replace the saved workspace with the JSON currently shown here?");
+    if (!shouldRestore) {
+      return;
+    }
+
+    try {
+      const nextState = normalizeState(JSON.parse(refs.workspaceJson.value));
+      activeStage = "inspect-flow";
+      replaceState(nextState);
+      resetAgentForm();
+      resetWorkflowForm();
+      persist();
+      render();
+      setTemporaryButtonLabel(refs.restoreJson, "Restored", "Restore JSON");
+    } catch {
+      setTemporaryButtonLabel(refs.restoreJson, "Invalid JSON", "Restore JSON");
     }
   });
 
@@ -1656,8 +1681,43 @@ function createClientScript(): string {
     }
   }
 
+  function loadUiState() {
+    try {
+      const raw = window.localStorage.getItem(uiStorageKey);
+      if (!raw) {
+        return { workflowId: "", groupIndex: 0 };
+      }
+
+      const parsed = JSON.parse(raw);
+      return {
+        workflowId: normalizeText(parsed?.workflowId),
+        groupIndex: Number.isInteger(parsed?.groupIndex) && parsed.groupIndex >= 0 ? parsed.groupIndex : 0,
+      };
+    } catch {
+      return { workflowId: "", groupIndex: 0 };
+    }
+  }
+
   function persist() {
     window.localStorage.setItem(storageKey, JSON.stringify(state));
+    persistUiState();
+  }
+
+  function persistUiState() {
+    window.localStorage.setItem(
+      uiStorageKey,
+      JSON.stringify({
+        workflowId: playback.workflowId,
+        groupIndex: playback.groupIndex,
+      }),
+    );
+  }
+
+  function setTemporaryButtonLabel(button, activeLabel, idleLabel) {
+    button.textContent = activeLabel;
+    window.setTimeout(() => {
+      button.textContent = idleLabel;
+    }, 1500);
   }
 
   function startPlaybackAnimation() {
@@ -1936,6 +1996,9 @@ function createClientScript(): string {
 
     if (state.workflows.length === 0) {
       stopPlaybackAnimation();
+      playback.workflowId = "";
+      playback.groupIndex = 0;
+      persistUiState();
       refs.playbackWorkflow.disabled = true;
       refs.playbackWorkflow.innerHTML = '<option value="">No workflows yet</option>';
       refs.playbackStepCounter.textContent = "No time slots";
@@ -1966,6 +2029,7 @@ function createClientScript(): string {
     playback.workflowId = activeWorkflow.id;
     refs.playbackWorkflow.value = activeWorkflow.id;
     playback.groupIndex = Math.min(playback.groupIndex, Math.max(groups.length - 1, 0));
+    persistUiState();
     if (refs.simulationSeed instanceof HTMLTextAreaElement) {
       refs.simulationSeed.disabled = false;
     }

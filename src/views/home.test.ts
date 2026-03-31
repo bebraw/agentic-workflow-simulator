@@ -39,6 +39,10 @@ describe("renderHomePage", () => {
     expect(html).toContain("Seed packet");
     expect(html).toContain("Open help about workflow playback");
     expect(html).toContain("Open help about seed packet");
+    expect(html).toContain("Restore JSON");
+    expect(html).toContain("Edit this JSON and use restore to replace the current browser workspace.");
+    expect(html).toContain('id="workspace-json" spellcheck="false"');
+    expect(html).not.toContain('id="workspace-json" readonly');
     expect(html).toContain('data-stage-panel="inspect-flow" hidden');
     expect(html).toContain('rel="stylesheet" href="/styles.css"');
   });

@@ -24,6 +24,8 @@ describe("worker", () => {
     expect(body).toContain("Open help about bundled workflow examples");
     expect(body).toContain("Open help about workflow builder");
     expect(body).toContain("Open help about workflow playback");
+    expect(body).toContain("Restore JSON");
+    expect(body).toContain("Edit this JSON and use restore to replace the current browser workspace.");
   });
 
   it("returns a JSON health response", async () => {

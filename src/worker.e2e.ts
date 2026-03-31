@@ -102,6 +102,9 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await expect(simulationStage.getByText("Final mock output")).toBeVisible();
   await page.reload();
 
+  await expect(page.getByRole("button", { name: "Inspect Flow" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByText("T2 of 2")).toBeVisible();
+  await expect(playbackStage.getByText("Return the corrected study guide as the final outcome.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Define Agents" }).click();
   await expect(page.getByRole("heading", { level: 3, name: "Summarizer" })).toBeVisible();
   await page.getByRole("button", { name: "Inspect Flow" }).click();
@@ -147,6 +150,54 @@ test("confirms destructive delete actions before removing saved data", async ({ 
   await page.getByRole("button", { name: "Inspect Flow" }).click();
   await expect(page.getByRole("option", { name: "Revise for an exam" })).toHaveCount(0);
   await expect(page.getByRole("textbox", { name: "Workspace JSON" })).not.toHaveValue(/Revise for an exam/);
+});
+
+test("restores the workspace from edited JSON", async ({ page }) => {
+  await page.goto("/?stage=inspect-flow");
+
+  const importedState = JSON.stringify(
+    {
+      agents: [
+        {
+          id: "agent-demo-import",
+          name: "Demo Importer",
+          responsibility: "Shapes a single imported workflow.",
+          inputs: "A pasted JSON workspace.",
+          outputs: "A restored workflow ready to inspect.",
+        },
+      ],
+      workflows: [
+        {
+          id: "workflow-demo-import",
+          name: "Demo Import Workflow",
+          outcome: "A restored workflow packet.",
+          agentIds: ["agent-demo-import"],
+          timeSteps: [
+            {
+              id: "time-step-demo-import",
+              time: 1,
+              agentId: "agent-demo-import",
+              work: "Turn the pasted workspace into a runnable demo flow.",
+              handoff: "Deliver the restored packet as the final outcome.",
+            },
+          ],
+        },
+      ],
+    },
+    null,
+    2,
+  );
+
+  await page.getByRole("textbox", { name: "Workspace JSON" }).fill(importedState);
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Restore JSON" }).click();
+
+  await expect(page.getByRole("button", { name: "Inspect Flow" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByLabel("Workflow to inspect")).toHaveValue("workflow-demo-import");
+  await expect(page.getByText("T1 of 1")).toBeVisible();
+  await expect(page.getByText("Graph view for Demo Import Workflow")).toBeVisible();
+  await page.getByRole("button", { name: "Define Agents" }).click();
+  await expect(page.getByRole("heading", { level: 3, name: "Demo Importer" })).toBeVisible();
 });
 
 test("serves the health endpoint", async ({ request }) => {

@@ -11,7 +11,7 @@ The primary users are smart beginners with little or no programming experience. 
 ### Architecture
 
 - **Entry points:** `GET /` renders the studio UI from [`src/views/home.ts`](../../src/views/home.ts). `GET /api/health` remains available for smoke tests and tooling.
-- **Data models:** The browser stores a workspace in `localStorage` under the key `agent-workflow-studio/v1`. The workspace contains `agents[]` and `workflows[]`. Each workflow stores `agentIds[]` plus ordered `timeSteps[]`. Each time step names a numeric `time` slot, the acting `agentId`, the work happening at that moment, and the handoff that moves the workflow forward. Multiple time steps can share the same `time` value to represent parallel execution.
+- **Data models:** The browser stores a workspace in `localStorage` under the key `agent-workflow-studio/v1`. The workspace contains `agents[]` and `workflows[]`. Each workflow stores `agentIds[]` plus ordered `timeSteps[]`. Each time step names a numeric `time` slot, the acting `agentId`, the work happening at that moment, and the handoff that moves the workflow forward. Multiple time steps can share the same `time` value to represent parallel execution. The browser may persist inspect-view UI state such as the selected workflow and active time slot under a separate browser-local UI state key.
 - **Interaction model:** The studio stays on a single route but is split into staged views: `Explore`, `Define Agents`, `Build Workflow`, and `Inspect Flow`. Each stage reveals one part of the learning path while reusing the same in-browser workspace state, and wider viewports should prefer side-by-side panels over tall stacked sections so the graph, forms, and saved examples fit the screen better.
 - **Navigation model:** The current stage should be reflected in the `?stage=` query parameter so students can refresh or share a direct link to `Explore`, `Define Agents`, `Build Workflow`, or `Inspect Flow` without introducing separate routes.
 - **Progressive disclosure:** Every stage should keep its primary controls and outputs visible by default. Secondary teaching copy should usually live in contextual help toggles, but the short comparison prompts in the `Explore` stage learning guide may stay visible in-card when that makes the worked examples easier to scan side by side.
@@ -43,7 +43,7 @@ The primary users are smart beginners with little or no programming experience. 
 - [ ] The inspect stage includes a deterministic mock execution view that shows a seed packet, per-agent transformed packets, and the merged outgoing packet for the current slot.
 - [ ] The app ships with example workflows that show both sequential and parallel execution patterns.
 - [ ] The workspace survives page reloads through `localStorage`.
-- [ ] The UI exposes the current workspace state so students can inspect what the app saved.
+- [ ] The UI exposes the current workspace state so students can inspect what the app saved and restore the workspace from edited JSON.
 - [ ] Spec updated in the same change set.
 - [ ] Automated tests cover the critical render and persistence behavior.
 
@@ -57,6 +57,7 @@ The primary users are smart beginners with little or no programming experience. 
 - The header summary cards for `Agents`, `Workflows`, and `Agent actions` should share the same wider card row as the onboarding cues when that reduces hero height without squeezing the text.
 - Workspace-wide actions such as loading the example data or clearing saved state should live with the workspace status area rather than competing visually with stage navigation.
 - Destructive delete actions for saved agents, workflows, and draft time-slot actions should require confirmation before data is removed from the browser workspace.
+- The inspect stage should let students replace the saved workspace from edited JSON without introducing a second data format or a server dependency.
 - Secondary help text should stay available in every stage, but it should not crowd the primary task surface when the student is already working through examples, defining agents, building a workflow, or inspecting flow. In the `Explore` stage, the short "What students should notice" prompts may remain visible without an extra click when the layout has room for them.
 - The inspect stage should stay focused on student-facing workflow outputs rather than generic app route inventory.
 - Workflow definitions must keep agent associations explicit in the stored state.
@@ -65,6 +66,7 @@ The primary users are smart beginners with little or no programming experience. 
 - The action editor in `Build Workflow` should prefer a taller two-row arrangement over a compressed single-row layout when that keeps labels, selectors, and textareas readable.
 - Parallel actions must remain grouped by shared time slot in the visualization.
 - The DAG spike must stay derived from the same stored workflow data as the editor and playback view.
+- The selected inspect workflow and active time slot should survive reloads whenever the saved workspace still contains that workflow and slot.
 - The mock execution layer must remain local, deterministic, and derived from the saved workflow definition rather than adding hidden backend or model dependencies.
 - The health endpoint contract must remain stable for local verification and smoke tests.
 
@@ -134,3 +136,9 @@ The primary users are smart beginners with little or no programming experience. 
 - Given: The student has already saved agents or workflows
 - When: The page reloads
 - Then: The saved workspace is restored from `localStorage` and rendered again
+
+**Scenario: Student restores a workspace from JSON**
+
+- Given: The inspect stage shows the current workspace JSON
+- When: The student edits that JSON and restores it
+- Then: The saved browser workspace is replaced with the restored agents and workflows, and the inspect tools render the restored workflow data
