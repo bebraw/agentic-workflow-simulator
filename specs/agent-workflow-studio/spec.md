@@ -56,6 +56,7 @@ The primary users are smart beginners with little or no programming experience. 
 - The current-stage summary and stage navigation should live together at the bottom of the header shell, and that summary block should keep a stable height across stage changes and common viewport sizes so the header does not jump when a longer stage title or description becomes active.
 - The header summary cards for `Agents`, `Workflows`, and `Agent actions` should share the same wider card row as the onboarding cues when that reduces hero height without squeezing the text.
 - Workspace-wide actions such as loading the example data or clearing saved state should live with the workspace status area rather than competing visually with stage navigation.
+- Destructive delete actions for saved agents, workflows, and draft time-slot actions should require confirmation before data is removed from the browser workspace.
 - Secondary help text should stay available in every stage, but it should not crowd the primary task surface when the student is already working through examples, defining agents, building a workflow, or inspecting flow. In the `Explore` stage, the short "What students should notice" prompts may remain visible without an extra click when the layout has room for them.
 - The inspect stage should stay focused on student-facing workflow outputs rather than generic app route inventory.
 - Workflow definitions must keep agent associations explicit in the stored state.

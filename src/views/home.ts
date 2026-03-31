@@ -1476,6 +1476,11 @@ function createClientScript(): string {
     }
 
     if (action === "delete") {
+      const shouldDelete = window.confirm("Delete this agent action from the draft workflow?");
+      if (!shouldDelete) {
+        return;
+      }
+
       draftTimeSteps = draftTimeSteps.filter((record) => record.id !== timeStepId);
       resetTimeStepForm();
       renderDraftTimeSteps(new Set(getSelectedAgentIds()));
@@ -1505,6 +1510,27 @@ function createClientScript(): string {
     }
 
     if (action === "delete") {
+      const agent = state.agents.find((record) => record.id === agentId);
+      if (!agent) {
+        return;
+      }
+
+      const affectedWorkflowCount = state.workflows.filter((workflow) => workflow.agentIds.includes(agentId)).length;
+      const shouldDelete = window.confirm(
+        affectedWorkflowCount > 0
+          ? 'Delete "' +
+              agent.name +
+              '"? This also removes its actions from ' +
+              affectedWorkflowCount +
+              " workflow" +
+              (affectedWorkflowCount === 1 ? "" : "s") +
+              " and may delete workflows that no longer have any agents or actions."
+          : 'Delete "' + agent.name + '" from this workspace?',
+      );
+      if (!shouldDelete) {
+        return;
+      }
+
       state.agents = state.agents.filter((record) => record.id !== agentId);
       state.workflows = state.workflows
         .map((workflow) => ({
@@ -1544,6 +1570,16 @@ function createClientScript(): string {
     }
 
     if (action === "delete") {
+      const workflow = state.workflows.find((record) => record.id === workflowId);
+      if (!workflow) {
+        return;
+      }
+
+      const shouldDelete = window.confirm('Delete workflow "' + workflow.name + '"?');
+      if (!shouldDelete) {
+        return;
+      }
+
       state.workflows = state.workflows.filter((record) => record.id !== workflowId);
       resetWorkflowForm();
       persist();

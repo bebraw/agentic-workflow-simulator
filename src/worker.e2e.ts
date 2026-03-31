@@ -111,6 +111,44 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await expect(page.getByRole("textbox", { name: "Workspace JSON" })).toHaveValue(/Pass the notes draft to Reviewer/);
 });
 
+test("confirms destructive delete actions before removing saved data", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.localStorage.clear());
+  await page.reload();
+
+  await page.getByRole("button", { name: "Define Agents" }).click();
+  await page.getByLabel("Agent name").fill("Summarizer");
+  await page.getByLabel("Main job").fill("Condenses long source material into short study notes.");
+  await page.getByLabel("Input").first().fill("Lecture slides and reading notes.");
+  await page.getByLabel("Output").fill("Bullet summaries and key takeaways.");
+  await page.getByRole("button", { name: "Save agent" }).click();
+
+  await page.getByRole("button", { name: "Build Workflow" }).click();
+  await page.getByLabel("Workflow name").fill("Revise for an exam");
+  await page.getByLabel("Desired outcome").fill("A compact revision pack for the final week.");
+  await page.getByRole("checkbox", { name: /Summarizer/ }).check();
+  await page.getByRole("spinbutton", { name: "Time slot" }).fill("1");
+  await page.getByLabel("Acting agent").selectOption({ label: "Summarizer" });
+  await page.getByRole("textbox", { name: "Work at this time slot" }).fill("Turn lecture slides into short study notes.");
+  await page.getByLabel("What gets handed forward").fill("Pass the notes draft to the next step.");
+  await page.getByRole("button", { name: "Add agent action" }).click();
+  await page.getByRole("button", { name: "Save workflow" }).click();
+
+  const summarizerCard = page.getByRole("heading", { level: 3, name: "Summarizer" }).locator("..").locator("..");
+
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.getByRole("button", { name: "Define Agents" }).click();
+  await summarizerCard.getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByRole("heading", { level: 3, name: "Summarizer" })).toBeVisible();
+
+  page.once("dialog", (dialog) => dialog.accept());
+  await summarizerCard.getByRole("button", { name: "Delete" }).click();
+  await expect(page.getByRole("heading", { level: 3, name: "Summarizer" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Inspect Flow" }).click();
+  await expect(page.getByRole("option", { name: "Revise for an exam" })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Workspace JSON" })).not.toHaveValue(/Revise for an exam/);
+});
+
 test("serves the health endpoint", async ({ request }) => {
   const response = await request.get("/api/health");
 
