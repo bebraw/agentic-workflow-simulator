@@ -18,10 +18,13 @@ describe("renderHomePage", () => {
 
     expect(html).toContain("Agent Workflow Studio");
     expect(html).toContain("localStorage");
+    expect(html).toContain("Learning stages");
+    expect(html).toContain("Explore");
+    expect(html).toContain("Inspect Flow");
     expect(html).toContain("Prepare a seminar briefing");
     expect(html).toContain("Source Checker");
     expect(html).toContain("parallel");
-    expect(html).toContain("Graph view for Prepare a seminar briefing");
+    expect(html).toContain('data-stage-panel="inspect-flow" hidden');
     expect(html).toContain('rel="stylesheet" href="/styles.css"');
   });
 

@@ -14,10 +14,11 @@ describe("worker", () => {
     const body = await response.text();
     expect(body).toContain("Agent Workflow Studio");
     expect(body).toContain("localStorage");
-    expect(body).toContain("Watch the handoff");
+    expect(body).toContain("Learning stages");
+    expect(body).toContain("Start with worked examples");
     expect(body).toContain("Prepare a seminar briefing");
     expect(body).toContain("Source Checker");
-    expect(body).toContain("Graph view for Prepare a seminar briefing");
+    expect(body).toContain("Inspect Flow");
     expect(body).toContain("/api/health");
   });
 

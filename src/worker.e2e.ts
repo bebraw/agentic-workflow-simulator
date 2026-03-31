@@ -4,12 +4,11 @@ test("renders the agent workflow studio", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1, name: "Agent Workflow Studio" })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 2, name: "Watch the handoff" })).toBeVisible();
+  await expect(page.getByText("Learning stages")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Explore" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("heading", { level: 2, name: "Study bundled workflows before building" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "Prepare a seminar briefing" })).toBeVisible();
-  await expect(page.getByText("Graph view for Prepare a seminar briefing")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Play animation" })).toBeVisible();
-  await expect(page.getByText(/The app keeps the entire studio in/i)).toBeVisible();
-  await expect(page.getByRole("link", { name: "/api/health" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Inspect Flow" })).toBeVisible();
 });
 
 test("shows bundled workflow examples with parallel time slots", async ({ page }) => {
@@ -17,6 +16,7 @@ test("shows bundled workflow examples with parallel time slots", async ({ page }
   const playbackStage = page.locator("#playback-stage");
   const graphStage = page.locator("#workflow-graph-stage");
 
+  await page.getByRole("button", { name: "Inspect Flow" }).click();
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Prepare a seminar briefing" });
   await expect(page.getByText("T1 of 4")).toBeVisible();
   await expect(graphStage.getByText("Graph view for Prepare a seminar briefing")).toBeVisible();
@@ -34,6 +34,7 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
+  await page.getByRole("button", { name: "Define Agents" }).click();
   await page.getByLabel("Agent name").fill("Summarizer");
   await page.getByLabel("Main job").fill("Condenses long source material into short study notes.");
   await page.getByLabel("Input").first().fill("Lecture slides and reading notes.");
@@ -42,6 +43,7 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
 
   await expect(page.getByRole("heading", { level: 3, name: "Summarizer" })).toBeVisible();
 
+  await page.getByRole("button", { name: "Build Workflow" }).click();
   await page.getByLabel("Workflow name").fill("Revise for an exam");
   await page.getByLabel("Desired outcome").fill("A compact revision pack for the final week.");
   await page.getByRole("checkbox", { name: /Summarizer/ }).check();
@@ -58,7 +60,7 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await page.getByRole("button", { name: "Add agent action" }).click();
   await page.getByRole("button", { name: "Save workflow" }).click();
 
-  await expect(page.getByRole("heading", { level: 3, name: "Revise for an exam" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Inspect Flow" })).toHaveAttribute("aria-pressed", "true");
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Revise for an exam" });
   await expect(page.getByText("T1 of 2")).toBeVisible();
   await expect(playbackStage.getByText("Pass the notes draft to Reviewer.", { exact: true })).toBeVisible();
@@ -67,8 +69,9 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await expect(playbackStage.getByText("Return the corrected study guide as the final outcome.", { exact: true })).toBeVisible();
   await page.reload();
 
+  await page.getByRole("button", { name: "Define Agents" }).click();
   await expect(page.getByRole("heading", { level: 3, name: "Summarizer" })).toBeVisible();
-  await expect(page.getByRole("heading", { level: 3, name: "Revise for an exam" })).toBeVisible();
+  await page.getByRole("button", { name: "Inspect Flow" }).click();
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Revise for an exam" });
   await expect(page.getByText("T1 of 2")).toBeVisible();
   await expect(page.getByLabel("Workspace JSON")).toHaveValue(/timeSteps/);

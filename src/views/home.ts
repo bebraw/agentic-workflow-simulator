@@ -39,10 +39,47 @@ type TimeGroup = {
   steps: TimeStepRecord[];
 };
 
+type LearningStage = {
+  id: string;
+  label: string;
+  title: string;
+  description: string;
+};
+
 const appTitle = "Agent Workflow Studio";
 const appDescription =
   "A browser-based learning tool where students define simple AI agents, connect them into workflows, and inspect the result without writing code first.";
 const storageKey = "agent-workflow-studio/v1";
+const learningStages: LearningStage[] = [
+  {
+    id: "explore",
+    label: "Explore",
+    title: "Start with worked examples",
+    description:
+      "Study the bundled workflows first so the ideas of roles, time slots, and handoffs feel concrete before you build your own.",
+  },
+  {
+    id: "define-agents",
+    label: "Define Agents",
+    title: "Name the helpers in your system",
+    description:
+      "Create narrow agent roles with explicit inputs and outputs. Students should be able to explain each agent in one sentence.",
+  },
+  {
+    id: "build-workflow",
+    label: "Build Workflow",
+    title: "Connect the agents over time",
+    description:
+      "Choose the participating agents, assign actions to time slots, and make the handoffs visible enough that another student can follow the flow.",
+  },
+  {
+    id: "inspect-flow",
+    label: "Inspect Flow",
+    title: "Watch how work moves",
+    description:
+      "Use playback, the graph, and the saved JSON together to inspect dependencies, parallel branches, and the current stored state.",
+  },
+];
 
 const starterState: WorkspaceState = {
   agents: [
@@ -225,10 +262,24 @@ export function renderHomePage(routes: RouteSummary[]): string {
         </li>`,
     )
     .join("");
+  const stageNav = learningStages
+    .map(
+      (stage, index) =>
+        `<button aria-label="${escapeHtml(stage.label)}" aria-pressed="${index === 0}" class="h-full rounded-[1rem] border px-4 py-4 text-left transition ${
+          index === 0
+            ? "border-app-accent bg-app-accent text-white shadow-panel"
+            : "border-app-line/75 bg-white text-app-text hover:border-app-accent/35 hover:text-app-accent-strong"
+        }" data-stage-trigger="${escapeHtml(stage.id)}" type="button">
+          <p class="text-[11px] font-semibold uppercase tracking-[0.18em] opacity-70">Stage ${index + 1}</p>
+          <p class="mt-2 text-base font-semibold tracking-[-0.02em]">${escapeHtml(stage.label)}</p>
+        </button>`,
+    )
+    .join("");
 
   const starterAgentCards = starterState.agents.map((agent) => renderAgentCard(agent)).join("");
   const starterWorkflowCards = starterState.workflows.map((workflow) => renderWorkflowPreview(workflow, starterState.agents)).join("");
   const starterWorkflow = starterState.workflows[0];
+  const initialStage = learningStages[0];
 
   return `<!doctype html>
 <html lang="en">
@@ -239,7 +290,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body class="min-h-screen bg-app-canvas text-app-text antialiased">
-    <main class="mx-auto flex w-[min(94rem,calc(100vw-1rem))] flex-col gap-6 px-0 py-4 sm:w-[min(94rem,calc(100vw-2rem))] sm:py-6">
+    <main class="mx-auto flex w-[min(100rem,calc(100vw-1rem))] flex-col gap-6 px-0 py-4 sm:w-[min(100rem,calc(100vw-2rem))] sm:py-6">
       <section class="overflow-hidden rounded-[1.5rem] border border-app-line/80 bg-app-surface shadow-panel">
         <div class="grid gap-8 px-5 py-8 sm:px-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)] xl:px-10 xl:py-10">
           <div>
@@ -286,56 +337,69 @@ export function renderHomePage(routes: RouteSummary[]): string {
       </section>
 
       <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-        <div class="grid gap-5 xl:grid-cols-[minmax(16rem,0.34fr)_minmax(0,1fr)] xl:items-start">
-          <div class="grid gap-4">
-            <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-4">
-              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow playback</p>
-              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Watch the handoff</h2>
-              <p class="mt-3 text-sm leading-7 text-app-text-soft">Move through a workflow time slot by time slot, or let the graph animation run, to see who is active now, which agents branch in parallel, and where the data packet moves next.</p>
-            </div>
-            <div class="grid gap-4 rounded-[1.25rem] border border-app-line/75 bg-app-canvas/70 p-4">
-              <label class="grid gap-2 text-sm font-semibold text-app-text" for="playback-workflow">
-                Workflow to inspect
-                <select class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="playback-workflow">
-                  ${renderPlaybackWorkflowOptions(starterState.workflows)}
-                </select>
-              </label>
-              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-prev" type="button">Previous slot</button>
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next slot</button>
-                <button class="rounded-full bg-app-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-app-accent-strong sm:col-span-2 xl:col-span-1" id="playback-auto" type="button">Play animation</button>
-              </div>
-              <div class="rounded-[1rem] border border-app-line/70 bg-white px-4 py-3">
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Active slot</p>
-                <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
-              </div>
-              <div class="rounded-[1rem] border border-app-line/70 bg-app-ink p-4 text-sm leading-7 text-app-ink-contrast">
-                Click any graph node to jump to its slot. The graph and the card playback stay synchronized on the same workflow state.
-              </div>
-            </div>
+        <div class="grid gap-5 xl:grid-cols-[minmax(16rem,0.34fr)_minmax(0,1fr)] xl:items-center">
+          <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-5">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning stages</p>
+            <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="stage-title">${escapeHtml(initialStage.title)}</h2>
+            <p class="mt-3 text-sm leading-7 text-app-text-soft" id="stage-description">${escapeHtml(initialStage.description)}</p>
           </div>
           <div class="grid gap-4">
-            <div id="workflow-graph-stage">${starterWorkflow ? renderWorkflowGraph(starterWorkflow, starterState.agents, 0) : renderEmptyWorkflowGraph()}</div>
-            <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
+            <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+              <div class="grid gap-3 sm:grid-cols-2 2xl:grid-cols-4" id="stage-nav">${stageNav}</div>
+              <div class="flex flex-wrap gap-3 lg:justify-end">
+                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="load-example" type="button">Load example workspace</button>
+                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-rust/45 hover:text-app-rust" id="clear-workspace" type="button">Clear workspace</button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section class="grid gap-6 xl:grid-cols-[minmax(0,1.22fr)_minmax(20rem,0.78fr)]">
-        <div class="grid gap-6">
+      <section data-stage-panel="explore">
+        <div class="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(20rem,0.82fr)]">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Explore examples</p>
+            <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Study bundled workflows before building</h2>
+            <p class="mt-3 max-w-3xl text-sm leading-7 text-app-text-soft">These examples show how agents split work, where parallel branches appear, and what kind of handoff text keeps a workflow understandable to another student.</p>
+            <div class="mt-6 grid gap-4">${starterWorkflowCards}</div>
+          </section>
+          <aside class="grid gap-6 xl:self-start">
+            <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning guide</p>
+              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">What students should notice</h2>
+              <div class="mt-5 grid gap-4">
+                <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
+                  <h3 class="text-lg font-semibold tracking-[-0.03em]">Parallel work still needs coordination</h3>
+                  <p class="mt-2 text-sm leading-7 text-app-text-soft">Two agents can work at the same time, but they still need a shared time slot and clear handoffs.</p>
+                </article>
+                <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
+                  <h3 class="text-lg font-semibold tracking-[-0.03em]">Time slots are not the same as agent count</h3>
+                  <p class="mt-2 text-sm leading-7 text-app-text-soft">A workflow might have five agent actions but only three time slots if some of those actions run in parallel.</p>
+                </article>
+                <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
+                  <h3 class="text-lg font-semibold tracking-[-0.03em]">Handoffs reveal dependencies</h3>
+                  <p class="mt-2 text-sm leading-7 text-app-text-soft">If a handoff is vague, the next slot will stall even when agents work in parallel.</p>
+                </article>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section data-stage-panel="define-agents" hidden>
+        <div class="grid gap-6 xl:grid-cols-[minmax(20rem,0.74fr)_minmax(0,1.26fr)] xl:items-start">
+          <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6 xl:sticky xl:top-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Agent builder</p>
                 <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Define the helpers in your system</h2>
                 <p class="mt-3 max-w-2xl text-sm leading-7 text-app-text-soft">Keep each agent narrow. Students should be able to say what the agent receives, what it returns, and why the workflow needs it.</p>
               </div>
-              <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="load-example" type="button">Load example workspace</button>
             </div>
 
             <form class="mt-6 grid gap-4" id="agent-form">
               <input id="agent-editing-id" type="hidden" value="">
-              <div class="grid gap-4 md:grid-cols-2">
+              <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
                 <label class="grid gap-2 text-sm font-semibold text-app-text" for="agent-name">
                   Agent name
                   <input class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="agent-name" maxlength="60" name="agent-name" placeholder="Planner" required type="text">
@@ -345,7 +409,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
                   <input class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="agent-responsibility" maxlength="140" name="agent-responsibility" placeholder="Breaks the task into manageable steps" required type="text">
                 </label>
               </div>
-              <div class="grid gap-4 md:grid-cols-2">
+              <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
                 <label class="grid gap-2 text-sm font-semibold text-app-text" for="agent-inputs">
                   Input
                   <textarea class="min-h-28 rounded-[1.25rem] border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="agent-inputs" maxlength="220" name="agent-inputs" placeholder="A goal, question, or draft to work from" required></textarea>
@@ -360,10 +424,23 @@ export function renderHomePage(routes: RouteSummary[]): string {
                 <button class="hidden rounded-full border border-app-line/70 bg-white px-5 py-3 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="agent-cancel" type="button">Cancel edit</button>
               </div>
             </form>
-
-            <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3" id="agent-list">${starterAgentCards}</div>
           </section>
 
+          <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Agent library</p>
+                <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Compare the roles side by side</h2>
+                <p class="mt-3 max-w-3xl text-sm leading-7 text-app-text-soft">Once the agent definitions sit next to each other, it is easier for students to spot overlap, missing inputs, and duplicated responsibilities.</p>
+              </div>
+            </div>
+            <div class="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-3" id="agent-list">${starterAgentCards}</div>
+          </section>
+        </div>
+      </section>
+
+      <section data-stage-panel="build-workflow" hidden>
+        <div class="grid gap-6 xl:grid-cols-[minmax(22rem,0.96fr)_minmax(0,1.04fr)] xl:items-start">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
             <div>
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow builder</p>
@@ -425,54 +502,79 @@ export function renderHomePage(routes: RouteSummary[]): string {
               <div class="flex flex-wrap gap-3">
                 <button class="rounded-full bg-app-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-app-accent-strong" id="workflow-submit" type="submit">Save workflow</button>
                 <button class="hidden rounded-full border border-app-line/70 bg-white px-5 py-3 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="workflow-cancel" type="button">Cancel edit</button>
-                <button class="rounded-full border border-app-line/70 bg-white px-5 py-3 text-sm font-semibold text-app-text transition hover:border-app-rust/45 hover:text-app-rust" id="clear-workspace" type="button">Clear workspace</button>
               </div>
             </form>
+          </section>
 
+          <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow library</p>
+              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Compare complete workflows</h2>
+              <p class="mt-3 max-w-3xl text-sm leading-7 text-app-text-soft">Keep the saved workflow cards beside the builder so students can borrow patterns from previous examples while composing a new sequence.</p>
+            </div>
             <div class="mt-6 grid gap-4" id="workflow-list">${starterWorkflowCards}</div>
           </section>
         </div>
+      </section>
 
-        <aside class="grid gap-6 xl:sticky xl:top-6 xl:self-start">
-          <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning guide</p>
-            <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">What students should notice</h2>
-            <div class="mt-5 grid gap-4">
-              <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <h3 class="text-lg font-semibold tracking-[-0.03em]">Parallel work still needs coordination</h3>
-                <p class="mt-2 text-sm leading-7 text-app-text-soft">Two agents can work at the same time, but they still need a shared time slot and clear handoffs.</p>
-              </article>
-              <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <h3 class="text-lg font-semibold tracking-[-0.03em]">Time slots are not the same as agent count</h3>
-                <p class="mt-2 text-sm leading-7 text-app-text-soft">A workflow might have five agent actions but only three time slots if some of those actions run in parallel.</p>
-              </article>
-              <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                <h3 class="text-lg font-semibold tracking-[-0.03em]">Handoffs reveal dependencies</h3>
-                <p class="mt-2 text-sm leading-7 text-app-text-soft">If a handoff is vague, the next slot will stall even when agents work in parallel.</p>
-              </article>
-            </div>
-          </section>
-
-          <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <div class="flex items-end justify-between gap-4">
-              <div>
-                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace state</p>
-                <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Inspect the JSON</h2>
+      <section data-stage-panel="inspect-flow" hidden>
+        <div class="grid gap-6 xl:grid-cols-[minmax(18rem,0.31fr)_minmax(0,1fr)] xl:items-start">
+          <aside class="grid gap-6 xl:sticky xl:top-6 xl:self-start">
+            <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+              <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-4">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow playback</p>
+                <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Watch the handoff</h2>
+                <p class="mt-3 text-sm leading-7 text-app-text-soft">Move through a workflow time slot by time slot, or let the graph animation run, to see who is active now, which agents branch in parallel, and where the data packet moves next.</p>
               </div>
-              <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
+              <div class="mt-4 grid gap-4 rounded-[1.25rem] border border-app-line/75 bg-app-canvas/70 p-4">
+                <label class="grid gap-2 text-sm font-semibold text-app-text" for="playback-workflow">
+                  Workflow to inspect
+                  <select class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="playback-workflow">
+                    ${renderPlaybackWorkflowOptions(starterState.workflows)}
+                  </select>
+                </label>
+                <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                  <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-prev" type="button">Previous slot</button>
+                  <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next slot</button>
+                  <button class="rounded-full bg-app-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-app-accent-strong sm:col-span-2 xl:col-span-1" id="playback-auto" type="button">Play animation</button>
+                </div>
+                <div class="rounded-[1rem] border border-app-line/70 bg-white px-4 py-3">
+                  <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Active slot</p>
+                  <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
+                </div>
+                <div class="rounded-[1rem] border border-app-line/70 bg-app-ink p-4 text-sm leading-7 text-app-ink-contrast">
+                  Click any graph node to jump to its slot. The graph and the card playback stay synchronized on the same workflow state.
+                </div>
+              </div>
+            </section>
+            <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
+          </aside>
+          <div class="grid gap-6">
+            <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+              <div id="workflow-graph-stage">${starterWorkflow ? renderWorkflowGraph(starterWorkflow, starterState.agents, 0) : renderEmptyWorkflowGraph()}</div>
+            </section>
+            <div class="grid gap-6 2xl:grid-cols-[minmax(0,0.96fr)_minmax(20rem,0.74fr)]">
+              <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+                <div class="flex items-end justify-between gap-4">
+                  <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace state</p>
+                    <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Inspect the JSON</h2>
+                  </div>
+                  <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="copy-json" type="button">Copy JSON</button>
+                </div>
+                <p class="mt-3 text-sm leading-7 text-app-text-soft">The app keeps the entire studio in <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">localStorage</code> under the key <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">${escapeHtml(storageKey)}</code>.</p>
+                <label class="sr-only" for="workspace-json">Workspace JSON</label>
+                <textarea class="mt-4 h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
+                  JSON.stringify(starterState, null, 2),
+                )}</textarea>
+              </section>
+              <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Available routes</p>
+                <ul class="mt-4 grid gap-3">${routeList}</ul>
+              </section>
             </div>
-            <p class="mt-3 text-sm leading-7 text-app-text-soft">The app keeps the entire studio in <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">localStorage</code> under the key <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">${escapeHtml(storageKey)}</code>.</p>
-            <label class="sr-only" for="workspace-json">Workspace JSON</label>
-            <textarea class="mt-4 h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
-              JSON.stringify(starterState, null, 2),
-            )}</textarea>
-          </section>
-
-          <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Available routes</p>
-            <ul class="mt-4 grid gap-3">${routeList}</ul>
-          </section>
-        </aside>
+          </div>
+        </div>
       </section>
 
       <noscript>
@@ -810,12 +912,14 @@ function createClientScript(): string {
   return `
 (() => {
   const storageKey = ${JSON.stringify(storageKey)};
+  const learningStages = ${serializeJsonForScript(learningStages)};
   const emptyState = { agents: [], workflows: [] };
   const seedNode = document.getElementById("workspace-seed");
   const seedState = seedNode ? normalizeState(JSON.parse(seedNode.textContent || "{}")) : emptyState;
   const state = loadState();
   let draftTimeSteps = [];
   let editingTimeStepId = "";
+  let activeStage = learningStages[0]?.id || "explore";
   const playback = { workflowId: "", groupIndex: 0, isAutoPlaying: false, timerId: 0 };
 
   const refs = {
@@ -826,6 +930,8 @@ function createClientScript(): string {
     workspaceJson: document.getElementById("workspace-json"),
     agentList: document.getElementById("agent-list"),
     workflowList: document.getElementById("workflow-list"),
+    stageTitle: document.getElementById("stage-title"),
+    stageDescription: document.getElementById("stage-description"),
     workflowAgentOptions: document.getElementById("workflow-agent-options"),
     workflowAgentError: document.getElementById("workflow-agent-error"),
     loadExample: document.getElementById("load-example"),
@@ -863,6 +969,7 @@ function createClientScript(): string {
   };
 
   refs.loadExample?.addEventListener("click", () => {
+    activeStage = "explore";
     replaceState(seedState);
     resetAgentForm();
     resetWorkflowForm();
@@ -876,6 +983,7 @@ function createClientScript(): string {
       return;
     }
 
+    activeStage = "explore";
     replaceState(emptyState);
     resetAgentForm();
     resetWorkflowForm();
@@ -910,6 +1018,26 @@ function createClientScript(): string {
     }
   });
 
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const trigger = target.closest("[data-stage-trigger]");
+    if (!(trigger instanceof HTMLElement)) {
+      return;
+    }
+
+    const nextStage = trigger.dataset.stageTrigger;
+    if (!nextStage) {
+      return;
+    }
+
+    activeStage = nextStage;
+    renderStage();
+  });
+
   refs.agentForm?.addEventListener("submit", (event) => {
     event.preventDefault();
 
@@ -930,6 +1058,7 @@ function createClientScript(): string {
     }
 
     upsertRecord(state.agents, record);
+    activeStage = "define-agents";
     resetAgentForm();
     persist();
     render();
@@ -974,6 +1103,7 @@ function createClientScript(): string {
     upsertRecord(state.workflows, record);
     playback.workflowId = record.id;
     playback.groupIndex = 0;
+    activeStage = "inspect-flow";
     resetWorkflowForm();
     persist();
     render();
@@ -1253,6 +1383,42 @@ function createClientScript(): string {
     renderAgentOptions(new Set(getSelectedAgentIds()));
     syncTimeStepControls();
     renderPlayback();
+    renderStage();
+  }
+
+  function renderStage() {
+    const stage = learningStages.find((candidate) => candidate.id === activeStage) || learningStages[0];
+    activeStage = stage?.id || "explore";
+
+    if (refs.stageTitle instanceof HTMLElement && stage) {
+      refs.stageTitle.textContent = stage.title;
+    }
+
+    if (refs.stageDescription instanceof HTMLElement && stage) {
+      refs.stageDescription.textContent = stage.description;
+    }
+
+    document.querySelectorAll("[data-stage-panel]").forEach((panel) => {
+      if (!(panel instanceof HTMLElement)) {
+        return;
+      }
+
+      panel.hidden = panel.dataset.stagePanel !== activeStage;
+    });
+
+    document.querySelectorAll("[data-stage-trigger]").forEach((button) => {
+      if (!(button instanceof HTMLButtonElement)) {
+        return;
+      }
+
+      const isActive = button.dataset.stageTrigger === activeStage;
+      button.setAttribute("aria-pressed", String(isActive));
+      button.className =
+        "h-full rounded-[1rem] border px-4 py-4 text-left transition " +
+        (isActive
+          ? "border-app-accent bg-app-accent text-white shadow-panel"
+          : "border-app-line/75 bg-white text-app-text hover:border-app-accent/35 hover:text-app-accent-strong");
+    });
   }
 
   function syncTimeStepControls() {
@@ -1519,6 +1685,7 @@ function createClientScript(): string {
   }
 
   function populateAgentForm(agent) {
+    activeStage = "define-agents";
     refs.agentEditingId.value = agent.id;
     refs.agentName.value = agent.name;
     refs.agentResponsibility.value = agent.responsibility;
@@ -1530,6 +1697,7 @@ function createClientScript(): string {
   }
 
   function populateWorkflowForm(workflow) {
+    activeStage = "build-workflow";
     refs.workflowEditingId.value = workflow.id;
     refs.workflowName.value = workflow.name;
     refs.workflowOutcome.value = workflow.outcome;
