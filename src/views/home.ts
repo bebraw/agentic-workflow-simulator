@@ -495,31 +495,22 @@ export function renderHomePage(initialStageId?: string | null): string {
               </div>
               <div class="mt-5 grid gap-4">
                 <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                  <div class="flex items-start justify-between gap-3">
-                    <h3 class="text-lg font-semibold tracking-[-0.03em]">Parallel work still needs coordination</h3>
-                    ${renderHelpToggle(
-                      "parallel coordination",
-                      "Two agents can work at the same time, but they still need a shared time slot and clear handoffs so the next slot knows what arrived from each branch.",
-                    )}
-                  </div>
+                  <h3 class="text-lg font-semibold tracking-[-0.03em] text-app-text">Parallel work still needs coordination</h3>
+                  <p class="mt-2 text-sm leading-7 text-app-text-soft">
+                    Two agents can work at the same time, but they still need a shared time slot and clear handoffs so the next slot knows what arrived from each branch.
+                  </p>
                 </article>
                 <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                  <div class="flex items-start justify-between gap-3">
-                    <h3 class="text-lg font-semibold tracking-[-0.03em]">Time slots are not the same as agent count</h3>
-                    ${renderHelpToggle(
-                      "time slots",
-                      "A workflow can have more agent actions than time slots when some actions run in parallel. Count the T1, T2, T3 columns separately from the number of cards.",
-                    )}
-                  </div>
+                  <h3 class="text-lg font-semibold tracking-[-0.03em] text-app-text">Time slots are not the same as agent count</h3>
+                  <p class="mt-2 text-sm leading-7 text-app-text-soft">
+                    A workflow can have more agent actions than time slots when some actions run in parallel. Count the T1, T2, T3 columns separately from the number of cards.
+                  </p>
                 </article>
                 <article class="rounded-[1rem] border border-app-line/70 bg-white p-4">
-                  <div class="flex items-start justify-between gap-3">
-                    <h3 class="text-lg font-semibold tracking-[-0.03em]">Handoffs reveal dependencies</h3>
-                    ${renderHelpToggle(
-                      "workflow handoffs",
-                      "If a handoff is vague, the next slot will stall even when agents work in parallel. Students should be able to say exactly what packet moves forward and who needs it next.",
-                    )}
-                  </div>
+                  <h3 class="text-lg font-semibold tracking-[-0.03em] text-app-text">Handoffs reveal dependencies</h3>
+                  <p class="mt-2 text-sm leading-7 text-app-text-soft">
+                    If a handoff is vague, the next slot will stall even when agents work in parallel. Students should be able to say exactly what packet moves forward and who needs it next.
+                  </p>
                 </article>
               </div>
             </section>

@@ -27,6 +27,12 @@ describe("renderHomePage", () => {
     expect(html).toContain("parallel");
     expect(html).toContain("Open help about bundled workflow examples");
     expect(html).toContain("Open help about learning guide");
+    expect(html).toContain("Two agents can work at the same time, but they still need a shared time slot");
+    expect(html).toContain("Count the T1, T2, T3 columns separately from the number of cards.");
+    expect(html).toContain("Students should be able to say exactly what packet moves forward and who needs it next.");
+    expect(html).not.toContain("Open help about parallel coordination");
+    expect(html).not.toContain("Open help about time slots");
+    expect(html).not.toContain("Open help about workflow handoffs");
     expect(html).toContain("Open help about agent builder");
     expect(html).toContain("Open help about workflow actions");
     expect(html).toContain("Choose at least one workflow agent above before adding actions.");
