@@ -239,9 +239,9 @@ export function renderHomePage(routes: RouteSummary[]): string {
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body class="min-h-screen bg-app-canvas text-app-text antialiased">
-    <main class="mx-auto flex w-[min(78rem,calc(100vw-1.5rem))] flex-col gap-6 px-0 py-6 sm:w-[min(78rem,calc(100vw-2.5rem))] sm:py-8">
+    <main class="mx-auto flex w-[min(94rem,calc(100vw-1rem))] flex-col gap-6 px-0 py-4 sm:w-[min(94rem,calc(100vw-2rem))] sm:py-6">
       <section class="overflow-hidden rounded-[1.5rem] border border-app-line/80 bg-app-surface shadow-panel">
-        <div class="grid gap-8 px-5 py-8 sm:px-8 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.9fr)] lg:px-10 lg:py-10">
+        <div class="grid gap-8 px-5 py-8 sm:px-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(18rem,0.85fr)] xl:px-10 xl:py-10">
           <div>
             <p class="inline-flex items-center rounded-full border border-app-line/70 bg-app-canvas/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning surface</p>
             <h1 class="mt-4 max-w-[10ch] text-5xl leading-none font-semibold tracking-[-0.06em] sm:text-7xl">${escapeHtml(appTitle)}</h1>
@@ -261,13 +261,13 @@ export function renderHomePage(routes: RouteSummary[]): string {
               </div>
             </div>
           </div>
-          <aside class="grid gap-4 self-start">
+          <aside class="grid gap-4 self-start xl:pt-2">
             <section class="rounded-[1rem] border border-app-line/70 bg-app-ink p-5 text-app-ink-contrast">
               <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workspace memory</p>
               <p class="mt-3 text-3xl font-semibold tracking-[-0.04em]" id="workspace-status">Saved in this browser</p>
               <p class="mt-3 text-sm leading-6 text-app-ink-soft">This version stores the learning workspace locally so students can experiment without accounts, servers, or setup friction.</p>
             </section>
-            <section class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+            <section class="grid gap-3 sm:grid-cols-3 xl:grid-cols-1">
               <div class="rounded-[1rem] border border-app-line/70 bg-white p-4">
                 <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Agents</p>
                 <p class="mt-2 text-3xl font-semibold tracking-[-0.04em]" id="agent-count">${starterState.agents.length}</p>
@@ -285,7 +285,43 @@ export function renderHomePage(routes: RouteSummary[]): string {
         </div>
       </section>
 
-      <section class="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.95fr)]">
+      <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
+        <div class="grid gap-5 xl:grid-cols-[minmax(16rem,0.34fr)_minmax(0,1fr)] xl:items-start">
+          <div class="grid gap-4">
+            <div class="rounded-[1.25rem] border border-app-line/75 bg-white p-4">
+              <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Workflow playback</p>
+              <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Watch the handoff</h2>
+              <p class="mt-3 text-sm leading-7 text-app-text-soft">Move through a workflow time slot by time slot, or let the graph animation run, to see who is active now, which agents branch in parallel, and where the data packet moves next.</p>
+            </div>
+            <div class="grid gap-4 rounded-[1.25rem] border border-app-line/75 bg-app-canvas/70 p-4">
+              <label class="grid gap-2 text-sm font-semibold text-app-text" for="playback-workflow">
+                Workflow to inspect
+                <select class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="playback-workflow">
+                  ${renderPlaybackWorkflowOptions(starterState.workflows)}
+                </select>
+              </label>
+              <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-prev" type="button">Previous slot</button>
+                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next slot</button>
+                <button class="rounded-full bg-app-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-app-accent-strong sm:col-span-2 xl:col-span-1" id="playback-auto" type="button">Play animation</button>
+              </div>
+              <div class="rounded-[1rem] border border-app-line/70 bg-white px-4 py-3">
+                <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-rust">Active slot</p>
+                <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
+              </div>
+              <div class="rounded-[1rem] border border-app-line/70 bg-app-ink p-4 text-sm leading-7 text-app-ink-contrast">
+                Click any graph node to jump to its slot. The graph and the card playback stay synchronized on the same workflow state.
+              </div>
+            </div>
+          </div>
+          <div class="grid gap-4">
+            <div id="workflow-graph-stage">${starterWorkflow ? renderWorkflowGraph(starterWorkflow, starterState.agents, 0) : renderEmptyWorkflowGraph()}</div>
+            <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="grid gap-6 xl:grid-cols-[minmax(0,1.22fr)_minmax(20rem,0.78fr)]">
         <div class="grid gap-6">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
@@ -397,27 +433,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
           </section>
         </div>
 
-        <aside class="grid gap-6">
-          <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
-            <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Time-slot playback</p>
-            <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">Watch the handoff</h2>
-            <p class="mt-3 text-sm leading-7 text-app-text-soft">Move through a workflow time slot by time slot to see who is active now, which agents work in parallel, and where the handoff goes next.</p>
-            <div class="mt-5 grid gap-4">
-              <label class="grid gap-2 text-sm font-semibold text-app-text" for="playback-workflow">
-                Workflow to inspect
-                <select class="rounded-2xl border border-app-line/80 bg-white px-4 py-3 text-base font-normal text-app-text outline-none transition focus:border-app-accent/60 focus:ring-2 focus:ring-app-accent/15" id="playback-workflow">
-                  ${renderPlaybackWorkflowOptions(starterState.workflows)}
-                </select>
-              </label>
-              <div class="flex flex-wrap items-center gap-3">
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-prev" type="button">Previous slot</button>
-                <p class="text-sm font-semibold uppercase tracking-[0.18em] text-app-rust" id="playback-step-counter">${starterWorkflow ? formatTimeCounter(starterWorkflow, 0) : "No time slots"}</p>
-                <button class="rounded-full border border-app-line/70 bg-white px-4 py-2 text-sm font-semibold text-app-text transition hover:border-app-accent/40 hover:text-app-accent-strong" id="playback-next" type="button">Next slot</button>
-              </div>
-              <div id="playback-stage">${starterWorkflow ? renderPlaybackStage(starterWorkflow, starterState.agents, 0) : renderEmptyPlaybackStage()}</div>
-            </div>
-          </section>
-
+        <aside class="grid gap-6 xl:sticky xl:top-6 xl:self-start">
           <section class="rounded-[1.5rem] border border-app-line/80 bg-app-surface p-5 shadow-panel sm:p-6">
             <p class="text-xs font-semibold uppercase tracking-[0.18em] text-app-accent">Learning guide</p>
             <h2 class="mt-2 text-3xl font-semibold tracking-[-0.04em]">What students should notice</h2>
@@ -447,7 +463,7 @@ export function renderHomePage(routes: RouteSummary[]): string {
             </div>
             <p class="mt-3 text-sm leading-7 text-app-text-soft">The app keeps the entire studio in <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">localStorage</code> under the key <code class="rounded bg-app-accent/10 px-2 py-1 text-xs font-semibold text-app-accent-strong">${escapeHtml(storageKey)}</code>.</p>
             <label class="sr-only" for="workspace-json">Workspace JSON</label>
-            <textarea class="mt-4 min-h-80 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none" id="workspace-json" readonly>${escapeHtml(
+            <textarea class="mt-4 h-72 w-full rounded-[1rem] border border-app-line/80 bg-white px-4 py-4 font-mono text-sm leading-6 text-app-text outline-none xl:h-[28rem]" id="workspace-json" readonly>${escapeHtml(
               JSON.stringify(starterState, null, 2),
             )}</textarea>
           </section>
@@ -610,6 +626,103 @@ export function renderEmptyPlaybackStage(): string {
   return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the handoff playback.</div>';
 }
 
+export function renderWorkflowGraph(workflow: WorkflowRecord, agents: AgentRecord[], groupIndex: number): string {
+  const groups = groupTimeSteps(workflow.timeSteps);
+  const activeGroup = groups[groupIndex];
+  if (!activeGroup) {
+    return renderEmptyWorkflowGraph();
+  }
+
+  const layout = createWorkflowGraphLayout(groups);
+  const nextGroup = groups[groupIndex + 1];
+  const columnGuides = layout.columns
+    .map(
+      (column) => `<g>
+        <rect fill="rgb(47 111 237 / 0.05)" height="${layout.height - 16}" rx="28" width="${layout.nodeWidth + 28}" x="${column.x - 14}" y="8"></rect>
+        <text fill="#52607a" font-size="12" font-weight="700" letter-spacing="0.18em" text-anchor="middle" x="${column.x + layout.nodeWidth / 2}" y="30">T${column.time}</text>
+      </g>`,
+    )
+    .join("");
+
+  const edges = groups
+    .slice(0, -1)
+    .flatMap((group, currentIndex) => {
+      const sourceNodes = layout.nodesByGroup[currentIndex] ?? [];
+      const targetNodes = layout.nodesByGroup[currentIndex + 1] ?? [];
+      return sourceNodes.flatMap((sourceNode) =>
+        targetNodes.map((targetNode) => {
+          const path = buildGraphEdgePath(sourceNode, targetNode, layout.nodeWidth);
+          const isActive = currentIndex === groupIndex;
+          const stroke = isActive ? "#2f6fed" : "rgb(22 32 51 / 0.14)";
+          return `<g>
+            <path d="${path}" fill="none" stroke="${stroke}" stroke-dasharray="${isActive ? "8 10" : "0"}" stroke-linecap="round" stroke-width="${isActive ? 3 : 2}">
+              ${isActive ? '<animate attributeName="stroke-dashoffset" from="18" to="0" dur="0.9s" repeatCount="indefinite"></animate>' : ""}
+              <title>${escapeHtml(sourceNode.step.handoff)}</title>
+            </path>
+            ${
+              isActive
+                ? `<circle cx="${sourceNode.x + layout.nodeWidth}" cy="${sourceNode.y + layout.nodeHeight / 2}" fill="#7fb2ff" r="5">
+                    <animateMotion dur="1.9s" path="${path}" repeatCount="indefinite"></animateMotion>
+                  </circle>`
+                : ""
+            }
+          </g>`;
+        }),
+      );
+    })
+    .join("");
+
+  const nodes = layout.nodes
+    .map((node) => {
+      const stateClass =
+        node.groupIndex === groupIndex
+          ? "border-app-accent/40 bg-app-sand shadow-panel ring-2 ring-app-accent/20"
+          : node.groupIndex < groupIndex
+            ? "border-app-line/70 bg-white/90"
+            : "border-app-line/70 bg-white/75";
+      const stateLabel = node.groupIndex === groupIndex ? "Active packet" : node.groupIndex < groupIndex ? "Earlier slot" : "Upcoming slot";
+      return `<button aria-label="Focus T${node.time}: ${escapeHtml(resolveAgentName(agents, node.step.agentId))}" aria-pressed="${node.groupIndex === groupIndex}" class="absolute rounded-[1rem] border p-4 text-left transition hover:-translate-y-0.5 hover:border-app-accent/35 ${stateClass}" data-graph-group-index="${node.groupIndex}" style="height:${layout.nodeHeight}px;left:${node.x}px;top:${node.y}px;width:${layout.nodeWidth}px" type="button">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-app-rust">T${node.time} · ${stateLabel}</p>
+        <p class="mt-2 text-sm font-semibold text-app-text">${escapeHtml(resolveAgentName(agents, node.step.agentId))}</p>
+        <p class="mt-2 text-sm leading-6 text-app-text-soft">${escapeHtml(node.step.work)}</p>
+      </button>`;
+    })
+    .join("");
+
+  return `<div class="grid gap-4">
+    <div class="rounded-[1.25rem] border border-app-line/80 bg-white/80 p-4">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <p class="text-sm font-semibold text-app-text">Graph view for ${escapeHtml(workflow.name)}</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">${activeGroup.steps.length > 1 ? `${activeGroup.steps.length} active branches at T${activeGroup.time}` : `Single active branch at T${activeGroup.time}`}</p>
+      </div>
+      <div class="mt-4 overflow-x-auto pb-2">
+        <div class="relative" style="height:${layout.height}px;width:${layout.width}px">
+          <svg aria-hidden="true" class="absolute inset-0 h-full w-full" viewBox="0 0 ${layout.width} ${layout.height}">
+            ${columnGuides}
+            ${edges}
+          </svg>
+          ${nodes}
+        </div>
+      </div>
+    </div>
+    <div class="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      <article class="rounded-[1rem] border border-app-line/75 bg-white p-4">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Active data packet</p>
+        <p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">${nextGroup ? `Packets leave T${activeGroup.time} and head to T${nextGroup.time}` : `T${activeGroup.time} delivers the final result`}</p>
+        <p class="mt-2 text-sm leading-7 text-app-text-soft">${activeGroup.steps.map((step) => escapeHtml(step.handoff)).join(" ")}</p>
+      </article>
+      <article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-4 text-app-ink-contrast">
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this spike matters</p>
+        <p class="mt-2 text-sm leading-7">${nextGroup ? `The DAG makes dependencies visible: every active branch at T${activeGroup.time} feeds the next slot at T${nextGroup.time}.` : escapeHtml(workflow.outcome)}</p>
+      </article>
+    </div>
+  </div>`;
+}
+
+export function renderEmptyWorkflowGraph(): string {
+  return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the experimental DAG graph.</div>';
+}
+
 export function resolveAgentName(agents: AgentRecord[], agentId: string): string {
   return agents.find((agent) => agent.id === agentId)?.name ?? "Missing agent";
 }
@@ -646,6 +759,53 @@ function sortTimeSteps(timeSteps: TimeStepRecord[]): TimeStepRecord[] {
   return [...timeSteps].sort((left, right) => left.time - right.time);
 }
 
+function createWorkflowGraphLayout(groups: TimeGroup[]) {
+  const nodeWidth = 190;
+  const nodeHeight = 132;
+  const columnGap = 234;
+  const rowGap = 28;
+  const paddingX = 28;
+  const paddingY = 32;
+  const maxRows = Math.max(...groups.map((group) => group.steps.length), 1);
+  const contentHeight = maxRows * nodeHeight + Math.max(maxRows - 1, 0) * rowGap;
+  const width = Math.max(paddingX * 2 + nodeWidth + Math.max(groups.length - 1, 0) * columnGap, 640);
+  const height = paddingY * 2 + contentHeight;
+  const columns = groups.map((group, groupIndex) => ({
+    time: group.time,
+    x: paddingX + groupIndex * columnGap,
+  }));
+  const nodesByGroup = groups.map((group, groupIndex) => {
+    const totalHeight = group.steps.length * nodeHeight + Math.max(group.steps.length - 1, 0) * rowGap;
+    const startY = paddingY + (contentHeight - totalHeight) / 2;
+    return group.steps.map((step, stepIndex) => ({
+      step,
+      time: group.time,
+      groupIndex,
+      x: paddingX + groupIndex * columnGap,
+      y: startY + stepIndex * (nodeHeight + rowGap),
+    }));
+  });
+
+  return {
+    width,
+    height,
+    nodeWidth,
+    nodeHeight,
+    columns,
+    nodesByGroup,
+    nodes: nodesByGroup.flat(),
+  };
+}
+
+function buildGraphEdgePath(sourceNode: { x: number; y: number }, targetNode: { x: number; y: number }, nodeWidth: number): string {
+  const startX = sourceNode.x + nodeWidth;
+  const startY = sourceNode.y + 66;
+  const endX = targetNode.x;
+  const endY = targetNode.y + 66;
+  const controlOffset = Math.max((endX - startX) * 0.45, 44);
+  return `M ${startX} ${startY} C ${startX + controlOffset} ${startY}, ${endX - controlOffset} ${endY}, ${endX} ${endY}`;
+}
+
 function createClientScript(): string {
   return `
 (() => {
@@ -656,7 +816,7 @@ function createClientScript(): string {
   const state = loadState();
   let draftTimeSteps = [];
   let editingTimeStepId = "";
-  const playback = { workflowId: "", groupIndex: 0 };
+  const playback = { workflowId: "", groupIndex: 0, isAutoPlaying: false, timerId: 0 };
 
   const refs = {
     agentCount: document.getElementById("agent-count"),
@@ -692,8 +852,10 @@ function createClientScript(): string {
     playbackWorkflow: document.getElementById("playback-workflow"),
     playbackPrev: document.getElementById("playback-prev"),
     playbackNext: document.getElementById("playback-next"),
+    playbackAuto: document.getElementById("playback-auto"),
     playbackStepCounter: document.getElementById("playback-step-counter"),
     playbackStage: document.getElementById("playback-stage"),
+    workflowGraphStage: document.getElementById("workflow-graph-stage"),
     agentSubmit: document.getElementById("agent-submit"),
     workflowSubmit: document.getElementById("workflow-submit"),
     agentCancel: document.getElementById("agent-cancel"),
@@ -984,6 +1146,37 @@ function createClientScript(): string {
     renderPlayback();
   });
 
+  refs.playbackAuto?.addEventListener("click", () => {
+    if (playback.isAutoPlaying) {
+      stopPlaybackAnimation();
+      renderPlayback();
+      return;
+    }
+
+    startPlaybackAnimation();
+    renderPlayback();
+  });
+
+  refs.workflowGraphStage?.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLElement)) {
+      return;
+    }
+
+    const trigger = target.closest("[data-graph-group-index]");
+    if (!(trigger instanceof HTMLElement)) {
+      return;
+    }
+
+    const nextIndex = Number.parseInt(trigger.dataset.graphGroupIndex || "", 10);
+    if (!Number.isInteger(nextIndex) || nextIndex < 0) {
+      return;
+    }
+
+    playback.groupIndex = nextIndex;
+    renderPlayback();
+  });
+
   render();
 
   function loadState() {
@@ -1003,7 +1196,43 @@ function createClientScript(): string {
     window.localStorage.setItem(storageKey, JSON.stringify(state));
   }
 
+  function startPlaybackAnimation() {
+    const workflow = state.workflows.find((record) => record.id === playback.workflowId) || state.workflows[0];
+    const groups = workflow ? groupTimeSteps(workflow.timeSteps) : [];
+    if (groups.length <= 1) {
+      playback.isAutoPlaying = false;
+      playback.timerId = 0;
+      return;
+    }
+
+    stopPlaybackAnimation();
+    playback.isAutoPlaying = true;
+    playback.timerId = window.setInterval(() => {
+      const currentWorkflow = state.workflows.find((record) => record.id === playback.workflowId) || state.workflows[0];
+      const currentGroups = currentWorkflow ? groupTimeSteps(currentWorkflow.timeSteps) : [];
+      if (currentGroups.length <= 1) {
+        stopPlaybackAnimation();
+        renderPlayback();
+        return;
+      }
+
+      const lastIndex = currentGroups.length - 1;
+      playback.groupIndex = playback.groupIndex >= lastIndex ? 0 : playback.groupIndex + 1;
+      renderPlayback();
+    }, 1800);
+  }
+
+  function stopPlaybackAnimation() {
+    if (playback.timerId) {
+      window.clearInterval(playback.timerId);
+      playback.timerId = 0;
+    }
+
+    playback.isAutoPlaying = false;
+  }
+
   function replaceState(nextState) {
+    stopPlaybackAnimation();
     const cloned = cloneState(nextState);
     state.agents = cloned.agents;
     state.workflows = cloned.workflows;
@@ -1136,17 +1365,29 @@ function createClientScript(): string {
   }
 
   function renderPlayback() {
-    if (!(refs.playbackWorkflow instanceof HTMLSelectElement) || !(refs.playbackStage instanceof HTMLElement) || !(refs.playbackStepCounter instanceof HTMLElement) || !(refs.playbackPrev instanceof HTMLButtonElement) || !(refs.playbackNext instanceof HTMLButtonElement)) {
+    if (
+      !(refs.playbackWorkflow instanceof HTMLSelectElement) ||
+      !(refs.playbackStage instanceof HTMLElement) ||
+      !(refs.workflowGraphStage instanceof HTMLElement) ||
+      !(refs.playbackStepCounter instanceof HTMLElement) ||
+      !(refs.playbackPrev instanceof HTMLButtonElement) ||
+      !(refs.playbackNext instanceof HTMLButtonElement) ||
+      !(refs.playbackAuto instanceof HTMLButtonElement)
+    ) {
       return;
     }
 
     if (state.workflows.length === 0) {
+      stopPlaybackAnimation();
       refs.playbackWorkflow.disabled = true;
       refs.playbackWorkflow.innerHTML = '<option value="">No workflows yet</option>';
       refs.playbackStepCounter.textContent = "No time slots";
       refs.playbackPrev.disabled = true;
       refs.playbackNext.disabled = true;
+      refs.playbackAuto.disabled = true;
+      refs.playbackAuto.textContent = "Play animation";
       refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the handoff playback.</div>';
+      refs.workflowGraphStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Create a workflow with at least one time slot to see the experimental DAG graph.</div>';
       return;
     }
 
@@ -1163,11 +1404,19 @@ function createClientScript(): string {
 
     const group = groups[playback.groupIndex];
     if (!group) {
+      stopPlaybackAnimation();
       refs.playbackStepCounter.textContent = "No time slots";
       refs.playbackPrev.disabled = true;
       refs.playbackNext.disabled = true;
+      refs.playbackAuto.disabled = true;
+      refs.playbackAuto.textContent = "Play animation";
       refs.playbackStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add an action to the selected workflow to see its handoff.</div>';
+      refs.workflowGraphStage.innerHTML = '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add an action to the selected workflow to see the experimental DAG graph.</div>';
       return;
+    }
+
+    if (groups.length <= 1) {
+      stopPlaybackAnimation();
     }
 
     const nextGroup = groups[playback.groupIndex + 1];
@@ -1181,7 +1430,92 @@ function createClientScript(): string {
     refs.playbackStepCounter.textContent = 'T' + group.time + ' of ' + groups.length;
     refs.playbackPrev.disabled = playback.groupIndex === 0;
     refs.playbackNext.disabled = playback.groupIndex === groups.length - 1;
+    refs.playbackAuto.disabled = groups.length <= 1;
+    refs.playbackAuto.textContent = playback.isAutoPlaying ? "Pause animation" : "Play animation";
     refs.playbackStage.innerHTML = '<div class="grid gap-4"><article class="rounded-[1rem] border border-app-line/75 bg-white p-5"><div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-rust">Active at T' + group.time + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (group.steps.length > 1 ? group.steps.length + ' agents are working in parallel at this time.' : 'One agent is active in this slot.') + '</p></div><div class="mt-4 grid gap-3 md:grid-cols-2">' + activeCards + '</div></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-5 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Handoff packets</p><div class="mt-4 grid gap-3">' + handoffCards + '</div><p class="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (nextGroup ? 'Next slot: T' + nextGroup.time : 'Workflow outcome') + '</p><p class="mt-2 text-lg font-semibold tracking-[-0.02em]">' + (nextGroup ? nextGroup.steps.length + ' agent' + (nextGroup.steps.length === 1 ? '' : 's') + ' continue at T' + nextGroup.time : escapeHtml(activeWorkflow.outcome)) + '</p></article></div>';
+    refs.workflowGraphStage.innerHTML = renderWorkflowGraphStage(activeWorkflow, playback.groupIndex);
+  }
+
+  function renderWorkflowGraphStage(workflow, groupIndex) {
+    const groups = groupTimeSteps(workflow.timeSteps);
+    const activeGroup = groups[groupIndex];
+    if (!activeGroup) {
+      return '<div class="rounded-[1rem] border border-dashed border-app-line/80 bg-white p-5 text-sm leading-7 text-app-text-soft">Add an action to the selected workflow to see the experimental DAG graph.</div>';
+    }
+
+    const layout = createWorkflowGraphLayout(groups);
+    const nextGroup = groups[groupIndex + 1];
+    const columnGuides = layout.columns
+      .map((column) => '<g><rect fill="rgb(47 111 237 / 0.05)" height="' + (layout.height - 16) + '" rx="28" width="' + (layout.nodeWidth + 28) + '" x="' + (column.x - 14) + '" y="8"></rect><text fill="#52607a" font-size="12" font-weight="700" letter-spacing="0.18em" text-anchor="middle" x="' + (column.x + layout.nodeWidth / 2) + '" y="30">T' + column.time + '</text></g>')
+      .join("");
+    const edges = groups
+      .slice(0, -1)
+      .flatMap((group, currentIndex) => {
+        const sourceNodes = layout.nodesByGroup[currentIndex] || [];
+        const targetNodes = layout.nodesByGroup[currentIndex + 1] || [];
+        return sourceNodes.flatMap((sourceNode) =>
+          targetNodes.map((targetNode) => {
+            const path = buildGraphEdgePath(sourceNode, targetNode, layout.nodeWidth);
+            const isActive = currentIndex === groupIndex;
+            const stroke = isActive ? "#2f6fed" : "rgb(22 32 51 / 0.14)";
+            return '<g><path d="' + path + '" fill="none" stroke="' + stroke + '" stroke-dasharray="' + (isActive ? "8 10" : "0") + '" stroke-linecap="round" stroke-width="' + (isActive ? 3 : 2) + '">' + (isActive ? '<animate attributeName="stroke-dashoffset" from="18" to="0" dur="0.9s" repeatCount="indefinite"></animate>' : "") + '<title>' + escapeHtml(sourceNode.step.handoff) + '</title></path>' + (isActive ? '<circle cx="' + (sourceNode.x + layout.nodeWidth) + '" cy="' + (sourceNode.y + layout.nodeHeight / 2) + '" fill="#7fb2ff" r="5"><animateMotion dur="1.9s" path="' + path + '" repeatCount="indefinite"></animateMotion></circle>' : "") + "</g>";
+          }),
+        );
+      })
+      .join("");
+    const nodes = layout.nodes
+      .map((node) => {
+        const stateClass = node.groupIndex === groupIndex ? "border-app-accent/40 bg-app-sand shadow-panel ring-2 ring-app-accent/20" : node.groupIndex < groupIndex ? "border-app-line/70 bg-white/90" : "border-app-line/70 bg-white/75";
+        const stateLabel = node.groupIndex === groupIndex ? "Active packet" : node.groupIndex < groupIndex ? "Earlier slot" : "Upcoming slot";
+        return '<button aria-label="Focus T' + node.time + ": " + escapeHtml(resolveAgentName(node.step.agentId)) + '" aria-pressed="' + (node.groupIndex === groupIndex) + '" class="absolute rounded-[1rem] border p-4 text-left transition hover:-translate-y-0.5 hover:border-app-accent/35 ' + stateClass + '" data-graph-group-index="' + node.groupIndex + '" style="height:' + layout.nodeHeight + "px;left:" + node.x + "px;top:" + node.y + "px;width:" + layout.nodeWidth + 'px" type="button"><p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-app-rust">T' + node.time + " · " + stateLabel + '</p><p class="mt-2 text-sm font-semibold text-app-text">' + escapeHtml(resolveAgentName(node.step.agentId)) + '</p><p class="mt-2 text-sm leading-6 text-app-text-soft">' + escapeHtml(node.step.work) + "</p></button>";
+      })
+      .join("");
+
+    return '<div class="grid gap-4"><div class="rounded-[1.25rem] border border-app-line/80 bg-white/80 p-4"><div class="flex flex-wrap items-center justify-between gap-3"><p class="text-sm font-semibold text-app-text">Graph view for ' + escapeHtml(workflow.name) + '</p><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">' + (activeGroup.steps.length > 1 ? activeGroup.steps.length + " active branches at T" + activeGroup.time : "Single active branch at T" + activeGroup.time) + '</p></div><div class="mt-4 overflow-x-auto pb-2"><div class="relative" style="height:' + layout.height + "px;width:" + layout.width + 'px"><svg aria-hidden="true" class="absolute inset-0 h-full w-full" viewBox="0 0 ' + layout.width + " " + layout.height + '">' + columnGuides + edges + "</svg>" + nodes + '</div></div></div><div class="grid gap-3 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]"><article class="rounded-[1rem] border border-app-line/75 bg-white p-4"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Active data packet</p><p class="mt-2 text-lg font-semibold tracking-[-0.03em] text-app-text">' + (nextGroup ? "Packets leave T" + activeGroup.time + " and head to T" + nextGroup.time : "T" + activeGroup.time + " delivers the final result") + '</p><p class="mt-2 text-sm leading-7 text-app-text-soft">' + activeGroup.steps.map((step) => escapeHtml(step.handoff)).join(" ") + '</p></article><article class="rounded-[1rem] border border-app-line/75 bg-app-ink p-4 text-app-ink-contrast"><p class="text-xs font-semibold uppercase tracking-[0.16em] text-app-accent">Why this spike matters</p><p class="mt-2 text-sm leading-7">' + (nextGroup ? "The DAG makes dependencies visible: every active branch at T" + activeGroup.time + " feeds the next slot at T" + nextGroup.time + "." : escapeHtml(workflow.outcome)) + "</p></article></div></div>";
+  }
+
+  function createWorkflowGraphLayout(groups) {
+    const nodeWidth = 190;
+    const nodeHeight = 132;
+    const columnGap = 234;
+    const rowGap = 28;
+    const paddingX = 28;
+    const paddingY = 32;
+    const maxRows = Math.max(...groups.map((group) => group.steps.length), 1);
+    const contentHeight = maxRows * nodeHeight + Math.max(maxRows - 1, 0) * rowGap;
+    const width = Math.max(paddingX * 2 + nodeWidth + Math.max(groups.length - 1, 0) * columnGap, 640);
+    const height = paddingY * 2 + contentHeight;
+    const columns = groups.map((group, groupIndex) => ({ time: group.time, x: paddingX + groupIndex * columnGap }));
+    const nodesByGroup = groups.map((group, groupIndex) => {
+      const totalHeight = group.steps.length * nodeHeight + Math.max(group.steps.length - 1, 0) * rowGap;
+      const startY = paddingY + (contentHeight - totalHeight) / 2;
+      return group.steps.map((step, stepIndex) => ({
+        step,
+        time: group.time,
+        groupIndex,
+        x: paddingX + groupIndex * columnGap,
+        y: startY + stepIndex * (nodeHeight + rowGap),
+      }));
+    });
+
+    return {
+      width,
+      height,
+      nodeWidth,
+      nodeHeight,
+      columns,
+      nodesByGroup,
+      nodes: nodesByGroup.flat(),
+    };
+  }
+
+  function buildGraphEdgePath(sourceNode, targetNode, nodeWidth) {
+    const startX = sourceNode.x + nodeWidth;
+    const startY = sourceNode.y + 66;
+    const endX = targetNode.x;
+    const endY = targetNode.y + 66;
+    const controlOffset = Math.max((endX - startX) * 0.45, 44);
+    return "M " + startX + " " + startY + " C " + (startX + controlOffset) + " " + startY + ", " + (endX - controlOffset) + " " + endY + ", " + endX + " " + endY;
   }
 
   function populateAgentForm(agent) {

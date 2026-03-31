@@ -6,6 +6,8 @@ test("renders the agent workflow studio", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Agent Workflow Studio" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 2, name: "Watch the handoff" })).toBeVisible();
   await expect(page.getByRole("heading", { level: 3, name: "Prepare a seminar briefing" })).toBeVisible();
+  await expect(page.getByText("Graph view for Prepare a seminar briefing")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play animation" })).toBeVisible();
   await expect(page.getByText(/The app keeps the entire studio in/i)).toBeVisible();
   await expect(page.getByRole("link", { name: "/api/health" })).toBeVisible();
 });
@@ -13,18 +15,22 @@ test("renders the agent workflow studio", async ({ page }) => {
 test("shows bundled workflow examples with parallel time slots", async ({ page }) => {
   await page.goto("/");
   const playbackStage = page.locator("#playback-stage");
+  const graphStage = page.locator("#workflow-graph-stage");
 
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Prepare a seminar briefing" });
   await expect(page.getByText("T1 of 4")).toBeVisible();
-  await page.getByRole("button", { name: "Next slot" }).click();
+  await expect(graphStage.getByText("Graph view for Prepare a seminar briefing")).toBeVisible();
+  await page.getByRole("button", { name: "Focus T2: Source Checker" }).click();
   await expect(page.getByText("T2 of 4")).toBeVisible();
   await expect(playbackStage.getByText("2 agents are working in parallel at this time.")).toBeVisible();
+  await expect(graphStage.getByText("Packets leave T2 and head to T3")).toBeVisible();
   await expect(playbackStage.getByText("Gather concepts, examples, and candidate references for each section.")).toBeVisible();
   await expect(playbackStage.getByText("Verify the strongest references and flag any weak or missing citations.")).toBeVisible();
 });
 
 test("creates time-stepped workflows that survive reloads", async ({ page }) => {
   await page.goto("/");
+  const playbackStage = page.locator("#playback-stage");
   await page.evaluate(() => window.localStorage.clear());
   await page.reload();
 
@@ -55,10 +61,10 @@ test("creates time-stepped workflows that survive reloads", async ({ page }) => 
   await expect(page.getByRole("heading", { level: 3, name: "Revise for an exam" })).toBeVisible();
   await page.getByLabel("Workflow to inspect").selectOption({ label: "Revise for an exam" });
   await expect(page.getByText("T1 of 2")).toBeVisible();
-  await expect(page.getByText("Pass the notes draft to Reviewer.", { exact: true })).toBeVisible();
+  await expect(playbackStage.getByText("Pass the notes draft to Reviewer.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Next slot" }).click();
   await expect(page.getByText("T2 of 2")).toBeVisible();
-  await expect(page.getByText("Return the corrected study guide as the final outcome.", { exact: true })).toBeVisible();
+  await expect(playbackStage.getByText("Return the corrected study guide as the final outcome.", { exact: true })).toBeVisible();
   await page.reload();
 
   await expect(page.getByRole("heading", { level: 3, name: "Summarizer" })).toBeVisible();

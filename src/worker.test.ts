@@ -17,6 +17,7 @@ describe("worker", () => {
     expect(body).toContain("Watch the handoff");
     expect(body).toContain("Prepare a seminar briefing");
     expect(body).toContain("Source Checker");
+    expect(body).toContain("Graph view for Prepare a seminar briefing");
     expect(body).toContain("/api/health");
   });
 

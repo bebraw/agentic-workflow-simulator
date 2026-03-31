@@ -4,6 +4,8 @@ import {
   countTimeSlots,
   countTimeSteps,
   renderEmptyPlaybackStage,
+  renderEmptyWorkflowGraph,
+  renderWorkflowGraph,
   renderHomePage,
   renderPlaybackStage,
   renderPlaybackWorkflowOptions,
@@ -19,10 +21,11 @@ describe("renderHomePage", () => {
     expect(html).toContain("Prepare a seminar briefing");
     expect(html).toContain("Source Checker");
     expect(html).toContain("parallel");
+    expect(html).toContain("Graph view for Prepare a seminar briefing");
     expect(html).toContain('rel="stylesheet" href="/styles.css"');
   });
 
-  it("renders playback helpers for empty, sequential, and parallel states", () => {
+  it("renders playback and graph helpers for empty, sequential, and parallel states", () => {
     const agents = [
       {
         id: "agent-1",
@@ -70,9 +73,13 @@ describe("renderHomePage", () => {
     };
 
     expect(renderEmptyPlaybackStage()).toContain("Create a workflow with at least one time slot");
+    expect(renderEmptyWorkflowGraph()).toContain("experimental DAG graph");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("2 agents are working in parallel at this time.");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("Researcher");
     expect(renderPlaybackStage(workflow, agents, 1)).toContain("Finished packet");
+    expect(renderWorkflowGraph(workflow, agents, 1)).toContain("Graph view for Parallel pass");
+    expect(renderWorkflowGraph(workflow, agents, 1)).toContain("T2 delivers the final result");
+    expect(renderWorkflowGraph(workflow, agents, 1)).toContain('data-graph-group-index="1"');
     expect(renderPlaybackWorkflowOptions([workflow, { ...workflow, id: "workflow-2", name: "Second workflow" }])).toContain(
       'option value="workflow-1" selected',
     );
